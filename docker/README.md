@@ -1,5 +1,11 @@
 # KA Music Docker 部署（Melos）
 
+> **Web PWA（推荐）**：浏览器直接访问、原生音频、无需 VNC。  
+> 使用根目录的 `Dockerfile.web` + `docker-compose.web.yml`，详见根 README 的
+> 「🌐 Melos Web PWA」章节。
+>
+> 本文档介绍可选的 **Linux 桌面版（KasmVNC）** 部署。
+
 一条命令启动 `kgka_Music_hl`（Flutter Linux 桌面版）+ 内嵌 **KuGouMusicApi**。
 应用完整运行在容器内的 KasmVNC 网页桌面中，浏览器打开即可看到图形界面，
 用酷狗概念版 App 扫码登录。

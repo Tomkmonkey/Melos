@@ -1,0 +1,36 @@
+# syntax=docker/dockerfile:1
+#
+# Melos Web PWA 后端：KuGouMusicApi + 会话/协议网关
+# 网关监听 0.0.0.0:3005，供 Nginx 同源反代；KuGouMusicApi 只在容器内
+# 127.0.0.1:3006 监听。
+
+FROM node:18-bookworm-slim
+
+ENV DEBIAN_FRONTEND=noninteractive \
+    TZ=Asia/Shanghai \
+    platform=lite \
+    PORT=3006 \
+    HOST=127.0.0.1 \
+    NODE_ENV=production \
+    KA_GATEWAY_PORT=3005 \
+    KA_GATEWAY_HOST=0.0.0.0 \
+    KA_API_TARGET=http://127.0.0.1:3006 \
+    KA_SESSION_FILE=/data/sessions.json \
+    KUGOU_API_PROXY=""
+
+WORKDIR /app
+
+COPY third_party/KuGouMusicApi/package.json ./kugou-api/package.json
+RUN cd kugou-api \
+    && npm install --omit=dev --no-audit --no-fund
+
+COPY third_party/KuGouMusicApi ./kugou-api
+COPY docker/gateway ./gateway
+COPY docker/api/start.sh /app/start.sh
+
+RUN chmod +x /app/start.sh
+
+VOLUME ["/data"]
+EXPOSE 3005
+
+CMD ["/app/start.sh"]

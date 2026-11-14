@@ -328,7 +328,7 @@ class _PlayerBodyState extends State<_PlayerBody> {
     _lastSystemUiLandscape = landscape;
     // 仅在 Android 上保持沉浸式全屏；iOS 上重置 SystemUiMode 会污染状态栏前景色，
     // 由本页的 StatusBarOverlay（及全局 _SystemUiOverlay）负责状态栏样式。
-    if (Platform.isAndroid) {
+    if (!kIsWeb && Platform.isAndroid) {
       SchedulerBinding.instance.addPostFrameCallback((_) {
         if (!mounted) {
           return;

@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:io';
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import '../widgets/liquid_glass_ui.dart';
@@ -189,7 +190,7 @@ class _HomePageState extends State<HomePage> {
     // Windows 上额外延迟 300ms 让 native 层完全稳定后再启动播放。
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) return;
-      final delay = Platform.isWindows
+      final delay = (!kIsWeb && Platform.isWindows)
           ? const Duration(milliseconds: 300)
           : Duration.zero;
       Future<void>.delayed(delay, () {

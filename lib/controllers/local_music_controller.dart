@@ -108,7 +108,7 @@ class LocalMusicController extends ChangeNotifier {
   }
 
   Future<void> _checkPermission() async {
-    if (!Platform.isAndroid) return;
+    if (kIsWeb || !Platform.isAndroid) return;
     try {
       final granted = await _channel.invokeMethod<bool>('hasPermission') ?? false;
       _hasPermission = granted;
@@ -122,7 +122,7 @@ class LocalMusicController extends ChangeNotifier {
   }
 
   Future<bool> requestPermission() async {
-    if (!Platform.isAndroid) return false;
+    if (kIsWeb || !Platform.isAndroid) return false;
     try {
       final granted = await _channel.invokeMethod<bool>('requestPermission') ?? false;
       _hasPermission = granted;
@@ -138,7 +138,7 @@ class LocalMusicController extends ChangeNotifier {
   }
 
   Future<void> scanLocalMusic() async {
-    if (!Platform.isAndroid) return;
+    if (kIsWeb || !Platform.isAndroid) return;
     if (!_hasPermission) return;
 
     _isScanning = true;
@@ -194,7 +194,7 @@ class LocalMusicController extends ChangeNotifier {
 
   /// 获取本地歌曲的专辑封面字节数据（带缓存）。
   Future<Uint8List?> getAlbumArt(String albumId) async {
-    if (!Platform.isAndroid) return null;
+    if (kIsWeb || !Platform.isAndroid) return null;
     if (_albumArtCache.containsKey(albumId)) {
       return _albumArtCache[albumId];
     }

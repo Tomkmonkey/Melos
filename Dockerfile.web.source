@@ -1,0 +1,26 @@
+# syntax=docker/dockerfile:1
+#
+# Melos Web PWA —— 在 Docker 内从 Flutter 源码构建（可选）
+# 需要下载 Flutter SDK，构建阶段资源占用较高；正常部署请用 Dockerfile.web
+# 配合 prebuilt/web。
+
+FROM ghcr.io/cirruslabs/flutter:3.50.0 AS web-build
+
+WORKDIR /app
+
+COPY pubspec.yaml pubspec.lock ./
+RUN flutter pub get --enforce-lockfile
+
+COPY lib ./lib
+COPY web ./web
+COPY update.md ./
+
+RUN flutter build web --release \
+        --dart-define=KA_MUSIC_API_BASE_URL=/api
+
+FROM nginx:alpine
+
+COPY --from=web-build /app/build/web /usr/share/nginx/html
+COPY docker/nginx-web.conf /etc/nginx/conf.d/default.conf
+
+EXPOSE 80

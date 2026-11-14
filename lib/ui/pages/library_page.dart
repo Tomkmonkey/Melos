@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import '../widgets/liquid_glass_ui.dart';
 import '../design_tokens.dart';
@@ -766,36 +767,39 @@ class _LibraryQuickGrid extends StatelessWidget {
             ),
           ],
         ),
-        const SizedBox(height: 12),
-        Row(
-          children: [
-            Expanded(
-              child: AnimatedBuilder(
-                animation: localMusic,
-                builder: (context, _) => _QuickHubTile(
-                  icon: Icons.computer_rounded,
-                  title: '本地',
-                  subtitle: '${localMusic.songs.length} 首',
-                  gradientColors: const [Color(0xFF67E3C8), Color(0xFF00BFA5)],
-                  onTap: onOpenLocal,
+        // Web PWA 不提供本地音乐和下载功能
+        if (!kIsWeb) ...[
+          const SizedBox(height: 12),
+          Row(
+            children: [
+              Expanded(
+                child: AnimatedBuilder(
+                  animation: localMusic,
+                  builder: (context, _) => _QuickHubTile(
+                    icon: Icons.computer_rounded,
+                    title: '本地',
+                    subtitle: '${localMusic.songs.length} 首',
+                    gradientColors: const [Color(0xFF67E3C8), Color(0xFF00BFA5)],
+                    onTap: onOpenLocal,
+                  ),
                 ),
               ),
-            ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: AnimatedBuilder(
-                animation: downloads,
-                builder: (context, _) => _QuickHubTile(
-                  icon: Icons.download_done_rounded,
-                  title: '已下载',
-                  subtitle: '${downloads.downloadedSongs.length} 首',
-                  gradientColors: const [Color(0xFF81D4FA), Color(0xFF0288D1)],
-                  onTap: onOpenDownloads,
+              const SizedBox(width: 12),
+              Expanded(
+                child: AnimatedBuilder(
+                  animation: downloads,
+                  builder: (context, _) => _QuickHubTile(
+                    icon: Icons.download_done_rounded,
+                    title: '已下载',
+                    subtitle: '${downloads.downloadedSongs.length} 首',
+                    gradientColors: const [Color(0xFF81D4FA), Color(0xFF0288D1)],
+                    onTap: onOpenDownloads,
+                  ),
                 ),
               ),
-            ),
-          ],
-        ),
+            ],
+          ),
+        ],
       ],
     );
   }

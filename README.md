@@ -13,7 +13,7 @@
 <p align="center">
   <strong>Melos · Docker 一体化部署包</strong>
   <br />
-  Flutter Linux 桌面版 + 内嵌 KuGouMusicApi + KasmVNC 网页桌面
+  Web PWA + 可选 Linux 桌面版 + 内嵌 KuGouMusicApi
 </p>
 
 <p align="center">
@@ -248,7 +248,38 @@ flutter test test/playlist_import_test.dart
 flutter run --dart-define=KA_MUSIC_API_BASE_URL=https://your-api.com
 ```
 
-### 🐳 Melos Docker 一键部署（内置 KuGouMusicApi）
+### 🌐 Melos Web PWA（推荐）
+
+浏览器直接访问，原生浏览器音频，不需要 VNC；最终 Nginx 镜像约 50MB。
+前端使用预编译的 `prebuilt/web`，部署时**不需要 Flutter SDK**。
+
+```bash
+docker compose -f docker-compose.web.yml up -d --build
+```
+
+默认地址：`http://<主机IP>:34962`
+
+1. 用 **酷狗音乐概念版 App** 扫码登录（只需一次）。
+2. 登录态保存在 `melos-web-data` 数据卷 + 浏览器 localStorage。
+3. 支持 PWA 安装；公网部署需要 HTTPS（localhost 除外）。
+4. 音频通过同源 `/api/audio-proxy` 转发，支持拖动进度，避免 HTTPS 混合内容。
+5. Web 端已隐藏本地音乐、下载、桌面歌词等平台功能。
+
+修改 Dart 代码后重新生成前端：
+
+```bash
+./docker/build-web.sh
+docker compose -f docker-compose.web.yml up -d --build
+```
+
+如需在 Docker 内从源码编译前端，使用 `Dockerfile.web.source`。
+
+---
+
+### 🖥️ Linux 桌面版（KasmVNC，可选）
+
+如需完整桌面能力（本地音乐、下载、桌面歌词等），可使用桌面版部署。
+
 
 本目录即完整的 Docker 部署包，`third_party/KuGouMusicApi` 与会话适配网关已经内置，
 无需单独安装 Flutter 或部署后端。
@@ -277,11 +308,18 @@ docker compose up -d --build
 ## 📁 项目结构
 
 ```
-Dockerfile                    # 默认：预编译 bundle + API + 运行环境
-Dockerfile.source             # 可选：在 Docker 内从 Flutter 源码构建
-docker-compose.yml            # 一条命令启动
+Dockerfile.web                # Web PWA：Nginx + 预编译 Flutter Web
+Dockerfile.api                # Web PWA 后端：KuGouMusicApi + 网关
+Dockerfile.web.source         # 可选：在 Docker 内从 Flutter 源码构建 Web
+docker-compose.web.yml        # Web PWA 一键启动
+docker/nginx-web.conf         # Nginx 静态 + /api 同源反代
+docker/build-web.sh           # 重新生成 prebuilt/web
+prebuilt/web/                 # 预编译 Flutter Web（默认 Web 镜像直接使用）
+Dockerfile                    # 桌面版：预编译 Linux bundle + API + KasmVNC
+Dockerfile.source             # 桌面版可选：Docker 内从 Flutter 源码构建
+docker-compose.yml            # 桌面版一键启动
 docker/                       # 会话网关、s6 服务、KasmVNC 启动脚本、build-linux.sh
-prebuilt/linux-x64/           # 预编译 Flutter Linux 应用（默认镜像直接使用）
+prebuilt/linux-x64/           # 预编译 Flutter Linux 应用
 third_party/KuGouMusicApi/    # 内嵌酷狗 API
 lib/
 ├── main.dart                 # 应用入口

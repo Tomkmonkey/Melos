@@ -260,6 +260,122 @@ function parseJson(buffer) {
   }
 }
 
+const AUDIO_HOST_SUFFIXES = ['.kugou.com', '.kgimg.com'];
+
+function isAllowedAudioUrl(target) {
+  const host = target.hostname.toLowerCase();
+  return (
+    /^https?:$/.test(target.protocol) &&
+    !target.username &&
+    !target.password &&
+    AUDIO_HOST_SUFFIXES.some((suffix) => host.endsWith(suffix))
+  );
+}
+
+/**
+ * 同源音频代理：把 http 的酷狗音频流转发给 HTTPS 页面，避免混合内容。
+ * 仅允许酷狗/KG 图片域名，防止被当作任意 SSRF 代理；Range 请求完整透传。
+ */
+function streamAudioProxy(req, res, url) {
+  if (req.method !== 'GET' && req.method !== 'HEAD') {
+    sendJson(res, 405, { status: 0, error: 'method_not_allowed' });
+    return;
+  }
+  const raw = url.searchParams.get('url') || '';
+  let target;
+  try {
+    target = new URL(raw);
+  } catch (_) {
+    sendJson(res, 400, { status: 0, error: 'invalid_audio_url' });
+    return;
+  }
+
+  const fetchOnce = (targetUrl, redirects) => {
+    if (!isAllowedAudioUrl(targetUrl)) {
+      sendJson(res, 400, {
+        status: 0,
+        error: 'audio_url_not_allowed',
+        message: '仅允许代理酷狗音频域名',
+      });
+      return;
+    }
+    if (redirects > 6) {
+      sendJson(res, 502, { status: 0, error: 'audio_too_many_redirects' });
+      return;
+    }
+    const transport = targetUrl.protocol === 'https:' ? https : http;
+    const headers = {
+      'user-agent':
+        'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124 Safari/537.36',
+      accept: '*/*',
+    };
+    for (const name of ['range', 'if-range', 'if-none-match', 'if-modified-since']) {
+      if (req.headers[name]) headers[name] = req.headers[name];
+    }
+    const upstream = transport.request(
+      {
+        protocol: targetUrl.protocol,
+        hostname: targetUrl.hostname,
+        port: targetUrl.port || undefined,
+        path: `${targetUrl.pathname}${targetUrl.search}`,
+        method: req.method === 'HEAD' ? 'HEAD' : 'GET',
+        headers,
+      },
+      (upstreamRes) => {
+        const status = upstreamRes.statusCode || 502;
+        if ([301, 302, 303, 307, 308].includes(status) && upstreamRes.headers.location) {
+          upstreamRes.resume();
+          let next;
+          try {
+            next = new URL(upstreamRes.headers.location, targetUrl);
+          } catch (_) {
+            sendJson(res, 502, { status: 0, error: 'bad_audio_redirect' });
+            return;
+          }
+          fetchOnce(next, redirects + 1);
+          return;
+        }
+        const out = {};
+        for (const name of [
+          'content-type',
+          'content-length',
+          'accept-ranges',
+          'content-range',
+          'etag',
+          'last-modified',
+          'cache-control',
+        ]) {
+          const value = upstreamRes.headers[name];
+          if (value !== undefined) out[name] = value;
+        }
+        res.writeHead(status, out);
+        if (req.method === 'HEAD') {
+          upstreamRes.resume();
+          res.end();
+          return;
+        }
+        upstreamRes.pipe(res);
+      },
+    );
+    upstream.on('error', (error) => {
+      if (!res.headersSent) {
+        sendJson(res, 502, {
+          status: 0,
+          error: 'audio_upstream_failed',
+          message: error.message,
+        });
+      } else {
+        res.destroy();
+      }
+    });
+    upstream.setTimeout(30000, () => upstream.destroy(new Error('audio upstream timeout')));
+    req.on('close', () => upstream.destroy());
+    upstream.end();
+  };
+
+  fetchOnce(target, 0);
+}
+
 // ---------------------------------------------------------------------------
 // 对外接口适配
 // ---------------------------------------------------------------------------
@@ -639,6 +755,13 @@ async function handle(req, res) {
       downloadUrl: '',
       forceUpdate: false,
     });
+    return;
+  }
+
+  // 音频同源代理：酷狗音频 CDN 只支持 http，Web PWA 在 HTTPS 下会被
+  // 混合内容策略拦截；这里由服务端转发，Range 请求原样透传以支持拖动进度。
+  if (pathname === '/audio-proxy') {
+    streamAudioProxy(req, res, url);
     return;
   }
 

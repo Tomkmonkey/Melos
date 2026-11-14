@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:io';
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:audio_service/audio_service.dart';
 import 'package:flutter/services.dart';
@@ -30,7 +31,7 @@ import 'ui/widgets/toast.dart';
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
   // Linux desktop (Docker) 没有官方 just_audio 实现，使用 media_kit/libmpv。
-  if (Platform.isLinux) {
+  if (!kIsWeb && Platform.isLinux) {
     JustAudioMediaKit.ensureInitialized(
       linux: true,
       windows: false,

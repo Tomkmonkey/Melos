@@ -910,7 +910,17 @@ class MusicApi {
         'free_part': false,
       }),
     );
-    return PlayUrl.fromJson(json);
+    return _maybeProxyAudio(PlayUrl.fromJson(json));
+  }
+
+  /// Web 端通过同源代理解析音频，避免 HTTPS 页面播放 HTTP 音频被浏览器拦截。
+  PlayUrl _maybeProxyAudio(PlayUrl playUrl) {
+    if (!kIsWeb || playUrl.url.isEmpty) return playUrl;
+    final proxyUri = AppConfig.apiUri('/audio-proxy', {'url': playUrl.url});
+    // just_audio_web 要求绝对 URL；相对路径会被当成 file:// 本地文件。
+    final absoluteUri =
+        proxyUri.hasScheme ? proxyUri : Uri.base.resolveUri(proxyUri);
+    return PlayUrl(url: absoluteUri.toString(), hash: playUrl.hash);
   }
 
   /// 获取云盘歌曲列表（分页）。
@@ -943,7 +953,7 @@ class MusicApi {
     );
     final url = asString(json['url']) ?? '';
     final hash = asString(json['hash']) ?? song.hash;
-    return PlayUrl(url: url, hash: hash);
+    return _maybeProxyAudio(PlayUrl(url: url, hash: hash));
   }
 
   /// 解析网易云 / QQ 音乐歌单分享链接，返回歌单名和歌曲名称列表。

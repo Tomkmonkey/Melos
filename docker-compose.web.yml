@@ -1,0 +1,32 @@
+name: melos-web
+
+services:
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile.api
+    image: melos-api:latest
+    container_name: melos-api
+    environment:
+      TZ: "${TZ:-Asia/Shanghai}"
+      KUGOU_API_PROXY: "${KUGOU_API_PROXY:-}"
+    volumes:
+      # 网关会话（登录态）持久化
+      - melos-web-data:/data
+    restart: unless-stopped
+
+  web:
+    build:
+      context: .
+      dockerfile: Dockerfile.web
+    image: melos-web:latest
+    container_name: melos-web
+    ports:
+      # Web PWA 访问端口
+      - "${MELOS_WEB_PORT:-34962}:80"
+    depends_on:
+      - api
+    restart: unless-stopped
+
+volumes:
+  melos-web-data:

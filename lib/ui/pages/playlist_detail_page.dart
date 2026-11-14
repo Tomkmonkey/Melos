@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:io';
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import '../widgets/liquid_glass_ui.dart';
 import '../widgets/app_section.dart';
@@ -1196,7 +1197,7 @@ class _PlaylistDetailPageState extends State<PlaylistDetailPage> {
               // "Failed to update ui::AXTree"）。在 Windows 上排除语义树消除提示，
               // 移动端保留无障碍功能。
               ExcludeSemantics(
-                excluding: !Platform.isWindows,
+                excluding: kIsWeb ? false : !Platform.isWindows,
                 child: CustomScrollView(
                   controller: _scrollController,
                   slivers: [
