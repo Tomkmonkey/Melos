@@ -1,0 +1,12 @@
+#!/usr/bin/with-contenv bash
+# 确保 abc 用户可访问 PulseAudio 运行时目录（基础镜像在部分层/重启场景下会把它
+# 变回 root:700，导致 mpv/Kclient 无法连接音频服务）。
+mkdir -p /defaults
+chown abc:abc /defaults 2>/dev/null || true
+chmod 700 /defaults 2>/dev/null || true
+
+exec s6-setuidgid abc \
+  /usr/bin/pulseaudio \
+    --log-level=0 \
+    --log-target=stderr \
+    --exit-idle-time=-1

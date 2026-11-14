@@ -1,0 +1,24 @@
+services:
+  ka-music:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: ka-music:latest
+    container_name: ka-music
+    ports:
+      # 宿主机端口固定为 34962；如需修改，设置 KA_MUSIC_PORT。
+      - "${KA_MUSIC_PORT:-34962}:3000"
+    environment:
+      TZ: "${TZ:-Asia/Shanghai}"
+      PUID: "911"
+      PGID: "911"
+      # 公网部署建议启用 HTTP Basic Auth（默认不启用）：
+      # PASSWORD: "请改成一个强密码"
+    volumes:
+      # 登录态、设置、缓存与网关会话都在这里，删除卷等于退出登录
+      - ka-music-config:/config
+    shm_size: "1gb"
+    restart: unless-stopped
+
+volumes:
+  ka-music-config:

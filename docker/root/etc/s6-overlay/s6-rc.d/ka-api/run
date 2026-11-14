@@ -1,0 +1,9 @@
+#!/usr/bin/with-contenv bash
+# 内嵌 KuGouMusicApi（kgka_Music_hl 的后端）
+export platform="${KUGOU_API_PLATFORM:-lite}"
+export PORT=3006
+export HOST=127.0.0.1
+export NODE_ENV=production
+
+cd /app/kugou-api || exit 1
+exec s6-setuidgid abc /usr/bin/node /app/kugou-api/app.js

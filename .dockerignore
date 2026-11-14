@@ -1,0 +1,27 @@
+# Flutter build outputs
+build/
+.dart_tool/
+.flutter-plugins
+.flutter-plugins-dependencies
+.packages
+linux/flutter/ephemeral/
+
+# Platform folders not needed for the Linux/Docker build
+android/
+ios/
+macos/
+windows/
+web/
+screenshots/
+test/
+.github/
+.vscode/
+
+# Vendored API build outputs
+third_party/KuGouMusicApi/node_modules/
+third_party/KuGouMusicApi/.git/
+
+# Docker / VCS
+.git/
+.gitignore
+.dockerignore

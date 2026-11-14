@@ -1,0 +1,7 @@
+#!/usr/bin/with-contenv bash
+# kgka_Music_hl 会话 / 协议适配网关
+export KA_GATEWAY_PORT=3005
+export KA_API_TARGET=http://127.0.0.1:3006
+export KA_SESSION_FILE="${KA_SESSION_FILE:-/config/ka-music/sessions.json}"
+
+exec s6-setuidgid abc /usr/bin/node /app/gateway/server.js
