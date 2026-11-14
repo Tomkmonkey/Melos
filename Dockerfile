@@ -1,56 +1,17 @@
 # syntax=docker/dockerfile:1
+#
+# Melos 运行时镜像（默认）
+# -----------------------------------------------------------------------------
+# Flutter Linux 应用已在本机预编译到 prebuilt/linux-x64/，部署时：
+#   - 不需要安装 Flutter SDK
+#   - 不会触发耗资源的 Flutter 编译
+# 修改 Dart 代码后，运行 docker/build-linux.sh 重新生成预编译 bundle，
+# 或使用 Dockerfile.source 在 Docker 内从源码构建。
+#
+# 仅支持 Linux x86_64。
 
 ###############################################################################
-# Stage 1 — 构建 Flutter Linux 桌面应用
-###############################################################################
-FROM ubuntu:24.04 AS flutter-builder
-
-ENV DEBIAN_FRONTEND=noninteractive
-
-RUN apt-get update \
-    && apt-get install -y --no-install-recommends \
-        ca-certificates \
-        clang \
-        cmake \
-        curl \
-        git \
-        libblkid-dev \
-        libgtk-3-dev \
-        liblzma-dev \
-        libstdc++-12-dev \
-        ninja-build \
-        pkg-config \
-        unzip \
-        xz-utils \
-        zip \
-    && rm -rf /var/lib/apt/lists/*
-
-ARG FLUTTER_VERSION=3.50.0
-RUN curl -fsSL -o /tmp/flutter.tar.xz \
-        "https://storage.googleapis.com/flutter_infra_release/releases/stable/linux/flutter_linux_${FLUTTER_VERSION}-stable.tar.xz" \
-    && tar -xf /tmp/flutter.tar.xz -C /opt \
-    && rm -f /tmp/flutter.tar.xz \
-    && git config --global --add safe.directory /opt/flutter
-
-ENV PATH="/opt/flutter/bin:${PATH}" \
-    PUB_CACHE=/opt/pub-cache
-
-WORKDIR /src
-
-COPY pubspec.yaml pubspec.lock ./
-RUN flutter config --no-analytics >/dev/null 2>&1 || true \
-    && flutter pub get --enforce-lockfile
-
-COPY lib ./lib
-COPY linux ./linux
-COPY update.md ./
-
-# 容器内的 App 通过本机网关访问 KuGouMusicApi，前端只需要一个固定地址。
-RUN flutter build linux --release \
-        --dart-define=KA_MUSIC_API_BASE_URL=http://127.0.0.1:3005
-
-###############################################################################
-# Stage 2 — 安装内嵌 KuGouMusicApi 的生产依赖
+# Stage 1 — 安装内嵌 KuGouMusicApi 的生产依赖
 ###############################################################################
 FROM node:18-bookworm-slim AS api-deps
 
@@ -59,7 +20,7 @@ COPY third_party/KuGouMusicApi/package.json ./
 RUN npm install --omit=dev --no-audit --no-fund
 
 ###############################################################################
-# Stage 3 — 运行环境：KasmVNC Web 桌面 + Flutter App + KuGouMusicApi + 网关
+# Stage 2 — KasmVNC Web 桌面 + 预编译 Flutter 应用 + KuGouMusicApi + 网关
 ###############################################################################
 FROM ghcr.io/linuxserver/baseimage-kasmvnc:ubuntunoble
 
@@ -85,8 +46,8 @@ RUN apt-get update \
         x11-utils \
     && rm -rf /var/lib/apt/lists/*
 
-# Flutter 桌面应用（含 data/ 与 lib/ 资源）
-COPY --from=flutter-builder /src/build/linux/x64/release/bundle /app/kgka_music_hl
+# 预编译的 Flutter Linux 桌面应用（由 docker/build-linux.sh 生成）
+COPY prebuilt/linux-x64 /app/kgka_music_hl
 
 # 内嵌 KuGouMusicApi
 COPY third_party/KuGouMusicApi /app/kugou-api

@@ -253,7 +253,8 @@ flutter run --dart-define=KA_MUSIC_API_BASE_URL=https://your-api.com
 本目录即完整的 Docker 部署包，`third_party/KuGouMusicApi` 与会话适配网关已经内置，
 无需单独安装 Flutter 或部署后端。
 
-**要求**：Docker 24+ / Compose v2、x86_64 主机；首次构建需约 **8–10 GB** 可用磁盘。
+**要求**：Docker 24+ / Compose v2、x86_64 主机。默认使用仓库内预编译的 Linux 应用，
+部署时无需安装 Flutter SDK，首次构建通常约 1–2 分钟。
 
 ```bash
 docker compose up -d --build
@@ -265,6 +266,10 @@ docker compose up -d --build
 2. 点击网页顶部中间 Kclient 工具栏的 **喇叭图标** 开启网页声音。
 3. 登录态、设置与缓存保存在 `ka-music-config` 数据卷中，重启容器无需重新扫码。
 
+> 默认镜像直接使用 `prebuilt/linux-x64`，不会在部署时重新编译 Flutter。
+> 修改 Dart 代码后运行 `./docker/build-linux.sh` 重新生成预编译 bundle；
+> 如需在 Docker 内从源码编译，请使用 `Dockerfile.source`。
+
 端口、访问密码、API 代理等配置见 [docker/README.md](docker/README.md)。
 
 ---
@@ -272,9 +277,11 @@ docker compose up -d --build
 ## 📁 项目结构
 
 ```
-Dockerfile                    # 多阶段构建（Flutter Linux + API + 运行环境）
+Dockerfile                    # 默认：预编译 bundle + API + 运行环境
+Dockerfile.source             # 可选：在 Docker 内从 Flutter 源码构建
 docker-compose.yml            # 一条命令启动
-docker/                       # 会话网关、s6 服务、KasmVNC 启动脚本
+docker/                       # 会话网关、s6 服务、KasmVNC 启动脚本、build-linux.sh
+prebuilt/linux-x64/           # 预编译 Flutter Linux 应用（默认镜像直接使用）
 third_party/KuGouMusicApi/    # 内嵌酷狗 API
 lib/
 ├── main.dart                 # 应用入口

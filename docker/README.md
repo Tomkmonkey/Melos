@@ -22,9 +22,10 @@ http://<主机IP>:34962
 KA_MUSIC_PORT=8080 docker compose up -d --build
 ```
 
-> 第一次构建会下载 Flutter SDK 与编译 Linux 桌面应用，约需 5–15 分钟，
-> 建议预留 **8–10 GB** 可用磁盘空间。之后重启/升级无需重新扫码 ——
-> 登录态保存在 `ka-music-config` 数据卷里。
+> 默认镜像直接使用仓库内预编译的 `prebuilt/linux-x64`，构建时**不会下载 Flutter SDK**，
+> 通常 1–2 分钟即可完成。修改 Dart 代码后请运行 `./docker/build-linux.sh` 重新生成
+> 预编译 bundle；也可以改用 `Dockerfile.source` 在 Docker 内从源码编译。
+> 之后重启/升级无需重新扫码 —— 登录态保存在 `ka-music-config` 数据卷里。
 
 ## 架构
 
@@ -76,6 +77,25 @@ docker compose down -v
 
 # 更新代码后重建
 docker compose up -d --build
+```
+
+## 重新编译 Flutter 应用（可选）
+
+默认部署不需要 Flutter。修改了 Dart 代码后再执行：
+
+```bash
+# 需要本机安装 Flutter 3.50+
+./docker/build-linux.sh
+
+# 重新构建并启动
+docker compose up -d --build
+```
+
+如果希望完全在 Docker 内编译（需要 Flutter SDK 和约 8–10 GB 磁盘）：
+
+```bash
+docker build -f Dockerfile.source -t ka-music:latest .
+docker compose up -d --no-build
 ```
 
 ## 环境变量
