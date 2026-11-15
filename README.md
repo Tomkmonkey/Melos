@@ -283,10 +283,9 @@ docker compose -f docker-compose.web.yml up -d --build
 
 如需在 Docker 内从源码编译前端，使用 `Dockerfile.web.source`。
 
-更新方法：
-```bash 
-  cd /path/to/Melos          # 你服务器上仓库所在目录
-  git pull origin main       # 更新文件
+更新方法（记得进入目录）：
+```bash
+  git pull origin main       # 拉取更新
   docker compose -f docker-compose.web.yml up -d --build
 ```
 ---
