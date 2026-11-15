@@ -12,4 +12,13 @@ class WebPerformance {
   /// 是否为需要降级特效的移动端 Web 环境。
   static bool get lowPower =>
       kIsWeb && defaultTargetPlatform == TargetPlatform.iOS;
+
+  /// 移动端浏览器（iPhone/iPad/Android）。
+  ///
+  /// 持续动画（跑马灯、均衡器徽标、骨架屏呼吸）会让 Flutter 一直排帧，
+  /// 听歌时也无法进入空闲。移动端统一改为静态展示；桌面浏览器保留动效。
+  static bool get mobileWeb =>
+      kIsWeb &&
+      (defaultTargetPlatform == TargetPlatform.iOS ||
+          defaultTargetPlatform == TargetPlatform.android);
 }

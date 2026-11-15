@@ -214,6 +214,11 @@ MELOS_WEB_PORT=8080 docker compose -f docker-compose.web.yml up -d --build
   - 关闭实时背景模糊、封面模糊、歌词模糊与封面旋转；
   - 歌词刷新约 30fps；
   - 输入框字号固定 16px，避免 iOS 聚焦时自动放大页面。
+- **移动端静态动效**（iPhone / iPad / Android）：
+  - 长标题跑马灯改为省略号；
+  - 「正在播放」均衡器徽标改为静态；
+  - 搜索骨架屏改为静态占位；
+  - 桌面浏览器仍保留全部动效。
 - **PWA**：`web/manifest.json` + Service Worker，支持安装到主屏幕与独立窗口运行。
 
 ---

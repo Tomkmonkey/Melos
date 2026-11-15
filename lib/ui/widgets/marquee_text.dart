@@ -1,6 +1,8 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 
+import '../../core/web_performance.dart';
+
 /// 高性能走马灯超长文本往复滚动组件。
 ///
 /// 特性：
@@ -86,6 +88,8 @@ class _MarqueeTextState extends State<MarqueeText> with WidgetsBindingObserver {
   }
 
   void _startAnimation(double maxScroll) {
+    // 移动端不启动往复滚动：省略号静态展示，避免持续排帧。
+    if (WebPerformance.mobileWeb) return;
     if (_isDisposed || maxScroll <= 0) return;
     _maxScroll = maxScroll;
     if (_isAnimating) return;
@@ -128,6 +132,17 @@ class _MarqueeTextState extends State<MarqueeText> with WidgetsBindingObserver {
   Widget build(BuildContext context) {
     if (widget.text.isEmpty) {
       return const SizedBox.shrink();
+    }
+
+    // 移动端直接用省略号截断，不测量宽度、不创建滚动动画。
+    if (WebPerformance.mobileWeb) {
+      return Text(
+        widget.text,
+        style: widget.style,
+        textAlign: widget.textAlign,
+        maxLines: 1,
+        overflow: TextOverflow.ellipsis,
+      );
     }
 
     final defaultStyle = DefaultTextStyle.of(context).style;

@@ -7,6 +7,7 @@ import '../design_tokens.dart';
 import '../../controllers/auth_controller.dart';
 import '../../controllers/player_controller.dart';
 import '../../controllers/theme_controller.dart';
+import '../../core/web_performance.dart';
 import '../../models/music_models.dart';
 import '../../services/music_api.dart';
 import '../../services/search_history_service.dart';
@@ -1130,7 +1131,11 @@ class _SkeletonBlockState extends State<_SkeletonBlock>
     _controller = AnimationController(
       vsync: this,
       duration: const Duration(milliseconds: 1200),
-    )..repeat(reverse: true);
+    );
+    // 移动端骨架屏保持静态，避免几十个呼吸动画同时排帧。
+    if (!WebPerformance.mobileWeb) {
+      _controller.repeat(reverse: true);
+    }
     _animation = Tween(begin: 0.0, end: 1.0).animate(
       CurvedAnimation(parent: _controller, curve: Curves.easeInOutSine),
     );
@@ -1145,6 +1150,19 @@ class _SkeletonBlockState extends State<_SkeletonBlock>
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
+    if (WebPerformance.mobileWeb) {
+      return Container(
+        height: widget.height,
+        width: widget.width,
+        decoration: BoxDecoration(
+          color: Theme.of(context)
+              .colorScheme
+              .onSurface
+              .withValues(alpha: isDark ? .10 : .12),
+          borderRadius: BorderRadius.circular(widget.radius),
+        ),
+      );
+    }
     return AnimatedBuilder(
       animation: _animation,
       builder: (context, _) {

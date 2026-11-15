@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import '../../core/web_performance.dart';
+
 class NowPlayingBadge extends StatefulWidget {
   const NowPlayingBadge({
     super.key,
@@ -45,7 +47,8 @@ class _NowPlayingBadgeState extends State<NowPlayingBadge>
   }
 
   void _syncAnimation() {
-    if (widget.active && widget.playing) {
+    // 移动端用静态均衡器图标，避免播放时持续 60fps 排帧。
+    if (widget.active && widget.playing && !WebPerformance.mobileWeb) {
       if (!_controller.isAnimating) {
         _controller.repeat(reverse: true);
       }
@@ -67,7 +70,9 @@ class _NowPlayingBadgeState extends State<NowPlayingBadge>
         builder: (context, _) {
           return CustomPaint(
             painter: _NowPlayingPainter(
-              progress: widget.playing ? _controller.value : .42,
+              progress: WebPerformance.mobileWeb
+                  ? .42
+                  : (widget.playing ? _controller.value : .42),
               color: widget.color,
             ),
           );
