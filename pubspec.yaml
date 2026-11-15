@@ -36,6 +36,13 @@ dev_dependencies:
     sdk: flutter
   flutter_lints: ^6.0.0
 
+# 网页端切歌修复：just_audio_web 0.4.16 会缓存首次 load 的音源树，导致网页端
+# 切歌后仍播放同一首歌。上游修复（ryanheise/just_audio#1593）尚未发布到
+# pub.dev，因此内置打过补丁的 0.4.17。
+dependency_overrides:
+  just_audio_web:
+    path: third_party/just_audio_web
+
 flutter:
   uses-material-design: true
   assets:

@@ -265,6 +265,11 @@ docker compose -f docker-compose.web.yml up -d --build
 4. 音频通过同源 `/api/audio-proxy` 转发，支持拖动进度，避免 HTTPS 混合内容。
 5. Web 端已隐藏本地音乐、下载、桌面歌词等平台功能。
 
+> 网页端切歌依赖内置的 `third_party/just_audio_web`（0.4.17 本地补丁）。
+> 上游 0.4.16 会缓存首次加载的音源树，导致歌单内切歌后封面/歌词变了、
+> 声音却仍是同一首；补丁已通过 `dependency_overrides` 接入，重新构建时
+> `flutter pub get` 会自动使用。
+
 修改 Dart 代码后重新生成前端：
 
 ```bash
@@ -321,6 +326,7 @@ docker-compose.yml            # 桌面版一键启动
 docker/                       # 会话网关、s6 服务、KasmVNC 启动脚本、build-linux.sh
 prebuilt/linux-x64/           # 预编译 Flutter Linux 应用
 third_party/KuGouMusicApi/    # 内嵌酷狗 API
+third_party/just_audio_web/   # 网页音频插件本地补丁（修复网页切歌）
 lib/
 ├── main.dart                 # 应用入口
 ├── assets/
