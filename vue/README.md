@@ -1,0 +1,66 @@
+# Melos Vue 前端（dev 分支）
+
+Melos 的 Web 前端正在从 Flutter Web 重构为 **Vue 3 + Vite + TypeScript**。
+后端（会话网关 + KuGouMusicApi）与 `/api` 同源代理保持不变。
+
+## 技术栈
+
+- Vue 3 + `<script setup>` + TypeScript
+- Vite + `vite-plugin-pwa`
+- Pinia（登录 / 播放器状态）
+- Vue Router
+- 原生 HTML5 Audio（不使用 CanvasKit）
+
+## 已实现
+
+- 扫码登录（酷狗概念版 App）
+- 自动迁移 Flutter 版 `localStorage` 登录态，升级后无需重新扫码
+- 首页推荐（6 组推荐卡片 + 推荐歌单）
+- 搜索歌曲、播放全部
+- 我的歌单、歌单详情
+- 播放队列、上一首/下一首、进度拖动、音量、循环模式
+- 媒体会话（锁屏 / 系统媒体控制）与播放状态持久化
+- 歌词（LRC 逐行同步、翻译合并）
+- 评论（热门 / 最新、楼层回复、配图）
+- PWA 安装、离线壳、响应式布局：
+  - 桌面：左侧栏 + 内容区 + 底部播放条
+  - 手机：底部导航 + 迷你播放条 + 全屏播放页
+
+## 开发
+
+```bash
+cd vue
+npm install
+npm run dev
+```
+
+开发服务器会把 `/api` 代理到 `http://127.0.0.1:3005`（容器内的会话网关）。
+也可以直接使用 Docker 版本：
+
+```bash
+docker compose -f docker-compose.web.yml up -d --build
+```
+
+## 构建
+
+```bash
+# 在仓库根目录执行
+./docker/build-vue.sh
+# 或
+cd vue && npm run build
+```
+
+产物输出到 `prebuilt/vue/`，`Dockerfile.web.vue` 会直接复制到 Nginx。
+
+## 与 Flutter 版的差异
+
+Vue 版目前覆盖 Web 端核心听歌流程；以下功能尚未迁移：
+
+- 歌单导入（QQ / 网易云）
+- 收藏 / 云盘 / 专辑 / FM / 排行榜
+- 设置、主题与自定义背景
+- 播放统计、历史记录页面
+- 评论发布（当前只读）
+- 网易云搜索与播放
+
+Flutter 版仍保留在 `main` 分支；需要完整功能或 Linux 桌面版时可切回。

@@ -36,14 +36,23 @@
 播放、管理歌单、看歌词和评论；在 iPhone / Android 上「添加到主屏幕」后，
 它就像一个原生音乐 App 一样运行。
 
+> **dev 分支说明**：Web 前端已重构为 **Vue 3 + Vite**（源码在 `vue/`），
+> `docker-compose.web.yml` 默认构建 Vue 版本，产物为 `prebuilt/vue`。
+> Flutter Web 与 Linux 桌面版源码仍保留在仓库中；`main` 分支为 Flutter 版本。
+
 ### 为什么是 Melos
 
 - **一条命令部署**：`docker compose -f docker-compose.web.yml up -d --build`。
-- **不需要 VNC**：浏览器原生音频播放，不再通过网页桌面串流声音。
-- **不需要 Flutter SDK**：前端已预编译在 `prebuilt/web`，服务器构建只做镜像打包。
-- **登录态持久化**：会话保存在 `melos-web-data` 数据卷，重启/升级无需重新扫码。
+- **不需要 VNC**：浏览器原生 HTML5 音频播放，不再通过网页桌面串流声音。
+- **不需要 Flutter / Node SDK**：Web 前端已重构为 Vue 3 并预编译到 `prebuilt/vue`，
+  服务器构建只做镜像打包。
+- **Vue 3 重构版**：响应式布局、DOM 渲染，不再使用 CanvasKit 全屏画布；
+  桌面侧栏 + 手机底部导航，天然适配各种屏幕。
+- **登录态持久化**：会话保存在 `melos-web-data` 数据卷；Vue 版还会自动迁移
+  Flutter 版浏览器里的登录态，升级后无需重新扫码。
 - **同源代理**：音频、评论、头像都经由 `/api` 转发，避开 HTTPS 混合内容与 CORS。
-- **iPhone 优化**：自动限制渲染倍率、关闭高开销模糊与旋转，输入框不再触发页面放大。
+- **移动端友好**：输入框字号 16px 避免 iOS 聚焦放大；骨架屏与动效保持静态，
+  听歌时页面可以真正进入空闲状态。
 - **可选桌面版**：需要本地音乐、下载、桌面歌词时，可改用 Linux 桌面版部署。
 
 > 本项目通过第三方 API 获取音乐数据，仅供学习交流。歌曲版权归原平台与版权方所有；
@@ -62,7 +71,8 @@
 ### 1. 启动
 
 ```bash
-git clone https://github.com/Tomkmonkey/Melos.git
+# Vue 重构版在 dev 分支
+git clone -b dev https://github.com/Tomkmonkey/Melos.git
 cd Melos
 docker compose -f docker-compose.web.yml up -d --build
 ```
@@ -104,59 +114,59 @@ MELOS_WEB_PORT=8080 docker compose -f docker-compose.web.yml up -d --build
 
 ---
 
-## ✨ 功能亮点
+## ✨ 功能亮点（Vue 重构版）
 
-> 以下为 Web PWA 中可用的功能。本地音乐、下载、桌面歌词等平台能力默认隐藏，
-> 需要时请使用可选的 Linux 桌面版。
+> dev 分支的 Web 端已迁移到 Vue 3，覆盖核心听歌流程；更完整的 Flutter 功能
+> （歌单导入、下载、FM、统计等）仍在 `main` 分支，后续逐步迁移。
 
 ### 🎵 播放
 
-- 标准 / 高品质 / 无损多音质切换，失败自动降级重试
-- 列表循环 / 随机播放 / 单曲循环
-- 0.5x ~ 3.0x 倍速播放
-- 均衡器预设与低音增强
-- 定时停止（按时间或播完当前歌曲）
-- 播放队列、进度恢复、最近播放
+- HTML5 Audio + Media Session（锁屏 / 系统媒体控制）
+- 320K / 128K 自动降级重试
+- 播放队列、上一首 / 下一首、进度拖动、音量、循环模式
+- 队列与进度持久化，刷新或重开 PWA 后自动恢复
 
-### 🎤 歌词与评论
+### 🎤 歌词
 
-- KRC 逐字歌词、翻译、罗马音
-- 双击歌词跳转进度、调整字号
+- LRC 逐行同步、翻译合并、自动滚动
+- 播放页「歌词 / 播放队列」切换
+
+### 💬 评论
+
 - 热门 / 最新评论、楼层回复、评论配图
-- 评论与头像经由同源代理加载，HTTPS 下也能正常显示
+- 评论、头像与图片经由同源代理加载，HTTPS 下可用
 
 ### 🔍 搜索与曲库
 
-- 酷狗 + 网易云双源搜索、搜索联想、热搜与历史
-- 每日推荐、推荐歌单、FM 电台
-- 歌单创建 / 收藏 / 重命名 / 排序 / 批量删除
-- 导入 QQ 音乐 / 网易云歌单，显示匹配与失败明细
-- 收藏、云盘、专辑商店
+- 首页 6 组推荐歌曲 + 推荐歌单
+- 酷狗搜索、播放全部
+- 我的歌单、歌单详情
 
-#### 导入 QQ 音乐 / 网易云歌单
+### 📱 PWA 与自适应
 
-1. 在来源 App 中把歌单设为公开并复制分享链接（或整段分享文本）。
-2. 打开 Melos 的「我的 → 导入 QQ / 网易云歌单」，粘贴后点击「解析歌单」。
-3. 确认名称与数量，选择新建歌单或已有歌单，点击「开始导入」。
-4. 导入完成后可查看新增、已存在、未匹配与失败数量；支持停止和重试。
+- **桌面**：左侧导航 + 内容区 + 底部播放条
+- **手机**：底部导航 + 迷你播放条 + 全屏播放页
+- PWA 安装、离线壳、独立窗口运行
+- 自动迁移 Flutter 版登录态，升级后无需重新扫码
 
-### 🎨 个性化与数据
+### 🚧 后续迁移
 
-- Material You 动态取色、深色模式、自定义背景
-- 播放历史、听歌时长、最常听歌手 / 歌曲 Top 10
-- PWA 独立窗口、离线壳与图标
+歌单导入、收藏 / 云盘 / 专辑 / FM、设置与主题、播放统计、评论发布、
+网易云搜索等功能仍在 Flutter 客户端，后续逐步迁移到 Vue。
 
 ---
 
-## 📸 界面预览
+## 📸 界面预览（Vue 重构版）
 
-| 首页 | 播放器 | 歌词 |
-|:----:|:------:|:----:|
-| ![首页](screenshots/home.jpg) | ![播放器](screenshots/player.jpg) | ![歌词](screenshots/lrc.jpg) |
+| 桌面首页 | 手机首页 |
+|:--------:|:--------:|
+| ![桌面首页](screenshots/vue-home.png) | ![手机首页](screenshots/vue-mobile.png) |
 
-| 我的 | 搜索 | 歌单 |
-|:----:|:----:|:----:|
-| ![我的](screenshots/library.jpg) | ![搜索](screenshots/search.jpg) | ![歌单](screenshots/playlist.jpg) |
+| 歌词页 | 评论面板 |
+|:------:|:--------:|
+| ![歌词页](screenshots/vue-lyrics.png) | ![评论](screenshots/vue-comments.png) |
+
+> Flutter 版界面截图仍保留在 `screenshots/home.jpg` 等文件中，可在 `main` 分支查看。
 
 ---
 
@@ -170,7 +180,7 @@ MELOS_WEB_PORT=8080 docker compose -f docker-compose.web.yml up -d --build
 │ Docker 项目 melos-web                             │
 │                                                   │
 │  melos-web (Nginx)                               │
-│    ├── /            → prebuilt/web 静态文件       │
+│    ├── /            → prebuilt/vue 静态文件       │
 │    └── /api/        → melos-api:3005              │
 │                                                   │
 │  melos-api (Node 18)                              │
@@ -186,10 +196,10 @@ MELOS_WEB_PORT=8080 docker compose -f docker-compose.web.yml up -d --build
 
 | 组件 | 说明 |
 |---|---|
-| `melos-web` | Nginx + 预编译 Flutter Web，默认端口 80（宿主机 34962） |
+| `melos-web` | Nginx + 预编译 Vue 3 SPA，默认端口 80（宿主机 34962） |
 | `melos-api` | Node 18，内置会话网关与 KuGouMusicApi |
 | `melos-web-data` | 登录会话、网关数据持久化卷 |
-| `prebuilt/web` | 已构建的前端产物，部署时不需要 Flutter SDK |
+| `prebuilt/vue` | 已构建的 Vue 前端产物，部署时不需要 Node/Flutter SDK |
 
 ### 关键设计
 
@@ -198,28 +208,32 @@ MELOS_WEB_PORT=8080 docker compose -f docker-compose.web.yml up -d --build
 - **同源代理**：音频与评论接口多为 HTTP 且不带 CORS 头，直接请求会被浏览器拦截；
   `/api/audio-proxy` 与 `/api/comment-proxy` 在服务端转发，并严格限制目标域名。
 - **Range 透传**：音频代理完整转发 `Range` / `206`，支持拖动进度。
-- **预编译产物**：Web 与 Linux 前端都在开发机编译，部署机只负责打包镜像。
-- **网页切歌补丁**：内置 `third_party/just_audio_web`（0.4.17），修复上游缓存导致
-  「歌单切歌后仍播放同一首」的问题。
+- **预编译产物**：Vue Web 与 Linux 前端都在开发机编译，部署机只负责打包镜像。
+- **原生音频**：Vue 版使用浏览器 HTML5 Audio，不再依赖 `just_audio_web`；
+  Flutter 版的切歌补丁仍保留在 `third_party/just_audio_web`。
 
 ---
 
-## 📱 Web 端专项说明
+## 📱 Web 端实现（Vue）
 
-- **音频**：`/api/audio-proxy` 转发酷狗 CDN，支持 Range 与拖动进度。
-- **评论**：`/api/comment-proxy` 转发评论列表与楼层回复；评论图片走音频代理。
-- **切歌**：本地补丁修复 `just_audio_web` 音源缓存问题（见 `third_party/just_audio_web`）。
-- **iPhone / iPad 轻量渲染**：
-  - 渲染倍率上限 2x；
-  - 关闭实时背景模糊、封面模糊、歌词模糊与封面旋转；
-  - 歌词刷新约 30fps；
-  - 输入框字号固定 16px，避免 iOS 聚焦时自动放大页面。
-- **移动端静态动效**（iPhone / iPad / Android）：
-  - 长标题跑马灯改为省略号；
-  - 「正在播放」均衡器徽标改为静态；
-  - 搜索骨架屏改为静态占位；
-  - 桌面浏览器仍保留全部动效。
-- **PWA**：`web/manifest.json` + Service Worker，支持安装到主屏幕与独立窗口运行。
+- **框架**：Vue 3 + Vite + TypeScript + Pinia + Vue Router；原生 DOM 渲染，
+  不再使用 CanvasKit，因此不需要限制 DPR。
+- **自适应布局**：
+  - 桌面：左侧导航 + 内容区 + 底部播放条；
+  - 手机：底部导航 + 迷你播放条 + 全屏播放页；
+  - 使用 CSS Grid/Flex 与安全区适配，无固定宽度依赖。
+- **音频**：HTML5 Audio + `/api/audio-proxy`（Range / 206），支持拖动进度；
+  使用 Media Session 接入锁屏与系统媒体控制。
+- **歌词**：`/search/lyric` + `/lyric`，LRC 行级同步、翻译合并、自动滚动。
+- **评论**：`/api/comment-proxy` 转发热门 / 最新与楼层回复，评论图片走音频代理。
+- **登录态迁移**：启动时读取 Flutter 版留下的 `flutter.ka_music_*` localStorage，
+  自动恢复登录，无需重新扫码。
+- **PWA**：`vite-plugin-pwa` 生成 manifest 与 Service Worker，支持安装与离线壳。
+- **移动端细节**：输入框固定 16px，避免 iOS 聚焦放大；不使用实时背景模糊与
+  无限动画，听歌时页面可进入空闲状态。
+
+> Flutter 版的 CanvasKit 降级、跑马灯/骨架屏静态化等优化仍保留在 `main` 分支，
+> 供 Flutter Web 部署使用。
 
 ---
 
@@ -247,23 +261,40 @@ docker compose up -d --build
 
 ### 环境
 
-- Flutter 3.50+（Dart 3.14+，`pubspec.yaml` 要求 `sdk: ^3.11.5`）
+- **Vue Web**：Node.js 20+ / npm
+- **Flutter 桌面版 / main 分支**：Flutter 3.50+（Dart 3.14+）
 - 可选：Docker 24+ / Compose v2（构建镜像时）
+
+### Vue 前端开发
+
+```bash
+cd vue
+npm install
+npm run dev      # Vite 开发服务器，/api 代理到 127.0.0.1:3005
+npm run build    # 产物输出到 ../prebuilt/vue
+```
+
+也可以直接使用 Docker：
+
+```bash
+docker compose -f docker-compose.web.yml up -d --build
+```
+
+### Flutter 桌面版开发
 
 ```bash
 flutter pub get
-flutter run -d chrome          # Web 调试
-flutter run -d linux           # 桌面版调试
+flutter run -d linux
 ```
 
 > 项目通过 `dependency_overrides` 使用 `third_party/just_audio_web`，
-> `flutter pub get` 会自动解析，无需额外配置。
+> `flutter pub get` 会自动解析。该补丁用于 Flutter Web，不影响 Vue 版。
 
 ### 重新生成预编译产物
 
 ```bash
-# 重新构建 Web 前端 → prebuilt/web
-./docker/build-web.sh
+# 重新构建 Vue 前端 → prebuilt/vue
+./docker/build-vue.sh
 
 # 重新构建 Linux 桌面版 → prebuilt/linux-x64
 ./docker/build-linux.sh
@@ -272,19 +303,23 @@ flutter run -d linux           # 桌面版调试
 docker compose -f docker-compose.web.yml up -d --build
 ```
 
-如果希望在 Docker 内从源码编译：
+如果需要在 Docker 内从源码编译：
 
-- Web：`Dockerfile.web.source`
+- Vue：直接修改 `Dockerfile.web.vue` / 使用 `prebuilt/vue`
+- Flutter Web（main 分支）：`Dockerfile.web.source`
 - 桌面版：`Dockerfile.source`
 
-### 编译环境变量
+### 环境变量
 
 | 变量 | 说明 | 默认值 |
 |---|---|---|
-| `KA_MUSIC_API_BASE_URL` | 前端默认 API 地址 | `https://music.api.hoilai.cn` |
-| `KA_MUSIC_DEBUG_LYRICS` | 歌词调试日志 | `true` |
+| `MELOS_WEB_PORT` | Web PWA 宿主机端口 | `34962` |
+| `TZ` | 容器时区 | `Asia/Shanghai` |
+| `KUGOU_API_PROXY` | KuGouMusicApi 的 HTTP 代理 | *(空)* |
+| `KA_MUSIC_API_BASE_URL` | Flutter 版默认 API 地址 | `https://music.api.hoilai.cn` |
+| `KA_MUSIC_DEBUG_LYRICS` | Flutter 版歌词调试日志 | `true` |
 
-Web 预编译使用 `--dart-define=KA_MUSIC_API_BASE_URL=/api`，与 Nginx 同源代理配合。
+Vue 版固定使用同源 `/api`，由 Nginx 转发到会话网关，无需配置 API 地址。
 
 ### 测试
 
@@ -293,43 +328,40 @@ flutter test test/local_lyrics_test.dart
 flutter test test/playlist_import_test.dart
 ```
 
-覆盖 LRC 编码、内嵌歌词、联网匹配与缓存，以及 QQ / 网易云歌单导入流程。
+覆盖 Flutter 版的 LRC 编码、内嵌歌词、联网匹配与缓存，以及歌单导入流程。
+Vue 版的自动化测试尚未接入。
 
 ---
 
 ## 📁 项目结构
 
 ```
-docker-compose.web.yml       # Web PWA 一键启动
-Dockerfile.web               # Web 镜像：Nginx + prebuilt/web
+docker-compose.web.yml       # Web PWA 一键启动（dev 默认 Vue）
+Dockerfile.web.vue           # Web 镜像：Nginx + prebuilt/vue
 Dockerfile.api               # API 镜像：KuGouMusicApi + 会话网关
-Dockerfile.web.source        # 可选：Docker 内从源码构建 Web
+vue/                         # Vue 3 + Vite + TypeScript 前端
+├── src/
+│   ├── api/                 # HTTP 客户端、解析、歌词、评论
+│   ├── stores/              # 登录、播放器状态
+│   ├── components/          # 播放条、评论面板、歌曲列表等
+│   └── views/               # 首页、搜索、我的、歌单、播放页、登录
+├── public/                  # PWA 图标
+└── vite.config.ts           # PWA / 构建 / 开发代理
+prebuilt/vue/                # 预编译 Vue Web（dev 默认部署产物）
 docker/
 ├── nginx-web.conf           # 静态资源 + /api 同源反代
 ├── gateway/server.js        # 会话网关、音频/评论代理
-├── build-web.sh             # 重新生成 prebuilt/web
+├── build-vue.sh             # 重新生成 prebuilt/vue
 └── build-linux.sh           # 重新生成 prebuilt/linux-x64
-prebuilt/web/                # 预编译 Flutter Web（推荐部署方式）
-prebuilt/linux-x64/          # 预编译 Linux 桌面版（可选）
-web/                         # PWA shell、manifest、图标
-lib/                         # Flutter 应用源码
+prebuilt/web/                # Flutter Web（main 分支 / 回退用）
+Dockerfile.web               # Flutter Web 镜像（main 分支）
+Dockerfile.web.source        # Flutter Web 源码构建（legacy）
+web/                         # Flutter PWA shell、manifest、图标
+lib/                         # Flutter 应用源码（桌面版 / main 分支）
 third_party/
 ├── KuGouMusicApi/           # 内嵌酷狗 API
-└── just_audio_web/          # 网页切歌修复补丁
+└── just_audio_web/          # Flutter Web 切歌修复补丁
 Dockerfile / docker-compose.yml   # 可选 Linux 桌面版
-```
-
-应用源码主要目录：
-
-```
-lib/
-├── main.dart                # 入口
-├── config/                  # API 地址等配置
-├── core/                    # HTTP 客户端、性能开关
-├── controllers/             # 登录、播放、下载、主题
-├── services/                # API、缓存、音频、评论、歌词
-├── models/                  # 领域模型
-└── ui/                      # 页面、组件、主题
 ```
 
 ---
@@ -340,7 +372,7 @@ lib/
 更新到最新版本，并确认 **api 镜像也重新构建**：
 
 ```bash
-git pull origin main
+git pull origin dev
 docker compose -f docker-compose.web.yml up -d --build
 ```
 
@@ -361,16 +393,26 @@ VIP / 版权受限歌曲可能不返回播放地址；也可能是网络或音�
 **登录态会丢吗？**
 不会。会话保存在 `melos-web-data` 数据卷；只有执行 `down -v` 才会清空。
 
+**从 Flutter 版升级到 Vue 版需要重新扫码吗？**
+不需要。Vue 版启动时会读取浏览器 localStorage 里的 `flutter.ka_music_*`
+登录态并自动迁移；如果浏览器数据已被清除，扫码一次即可。
+
+**Vue 版为什么比 Flutter 版少了些功能？**
+dev 分支优先完成 Web 核心听歌体验（播放、歌词、评论、歌单）；歌单导入、
+收藏/云盘/专辑/FM、设置、统计等功能仍在 Flutter 版，后续逐步迁移。
+功能清单见 [vue/README.md](vue/README.md)。
+
 ---
 
 ## 🔄 更新方式
 
 ```bash
 cd Melos
-git pull origin main
+git pull origin dev
 docker compose -f docker-compose.web.yml up -d --build
 ```
 
+- Vue 版在 `dev` 分支；`main` 分支仍是 Flutter 版，拉取时注意分支。
 - 必须带 `--build`：API 与前端都可能更新。
 - 数据卷不会删除，升级后无需重新扫码。
 - 桌面版更新：`docker compose up -d --build`。
@@ -379,10 +421,13 @@ docker compose -f docker-compose.web.yml up -d --build
 
 ## 📝 更新日志
 
-应用功能更新见 [update.md](update.md)（当前应用版本 3.3.0）。
+Flutter 应用功能更新见 [update.md](update.md)（当前 Flutter 版本 3.3.0）；
+Vue 前端随 `dev` 分支迭代。
 
 Melos 部署层近期更新：
 
+- **Web 前端重构为 Vue 3 + Vite**（dev 分支）：响应式布局、HTML5 Audio、
+  歌词与评论、PWA、Flutter 登录态迁移
 - 新增 Web PWA 部署：Nginx + Node 网关 + 同源 API/音频代理
 - 修复 Web 歌单切歌后仍播放同一首（内置 `just_audio_web` 补丁）
 - 修复 Web 评论区无法加载（新增 `/api/comment-proxy`）

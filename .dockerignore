@@ -25,3 +25,7 @@ third_party/KuGouMusicApi/.git/
 .git/
 .gitignore
 .dockerignore
+
+# Vue dev dependencies
+vue/node_modules/
+vue/.vite/

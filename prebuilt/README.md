@@ -1,19 +1,30 @@
-# 预编译 Flutter 产物
+# 预编译产物
 
-本目录用于避免在部署机器上执行耗资源的 Flutter 编译。
+本目录用于避免在部署机器上执行耗资源的前端编译。
 
-## web/ —— Web PWA 静态文件
+## vue/ —— Vue Web PWA（dev 分支默认）
 
-构建命令：
+```bash
+./docker/build-vue.sh
+# 等价于
+cd vue && npm ci && npm run build
+```
+
+- 默认 `Dockerfile.web.vue` 直接复制该目录，部署时无需 Node / Flutter SDK
+- 修改 `vue/` 代码后必须重新生成，否则 Web 镜像不会更新
+- 产物包含 PWA manifest、Service Worker 与图标
+
+## web/ —— Flutter Web 静态文件（main 分支 / 回退用）
 
 ```bash
 flutter build web --release \
   --dart-define=KA_MUSIC_API_BASE_URL=/api
 ```
 
-- 默认 `Dockerfile.web` 直接复制该目录，部署时无需 Flutter SDK
+- `Dockerfile.web` 直接复制该目录，部署时无需 Flutter SDK
 - 由 `./docker/build-web.sh` 重新生成
-- 修改 Dart 代码后必须重新生成，否则 Web 镜像不会更新
+- `dev` 分支的 `docker-compose.web.yml` 已改用 Vue，Flutter Web 保留用于
+  `main` 分支或回退
 
 ## linux-x64/ —— Linux 桌面版
 

@@ -62,3 +62,8 @@ logs/
 
 # Local secrets
 .env
+
+# Node / Vue
+node_modules/
+vue/node_modules/
+vue/.vite/
