@@ -422,6 +422,8 @@ docker compose -f docker-compose.web.yml up -d --build
 ```
 
 - `dev` 是默认分支，Vue 版代码与预编译产物都在这里。
+- 如果本地还停在已删除的 `main` 分支：先执行
+  `git fetch --prune && git switch dev`。
 - 必须带 `--build`：API 与前端都可能更新。
 - 数据卷不会删除，升级后无需重新扫码。
 - 桌面版更新：`docker compose up -d --build`。
