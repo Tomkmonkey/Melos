@@ -1,193 +1,53 @@
 <p align="center">
-  <img src="lib/assets/logo.png" alt="KA Music Logo" width="120" height="120" />
+  <img src="lib/assets/logo.png" alt="Melos Logo" width="120" height="120" />
 </p>
 
-<h1 align="center">KA Music</h1>
+<h1 align="center">Melos</h1>
 
 <p align="center">
-  <strong>一个精致的第三方音乐客户端</strong>
+  <strong>自托管音乐 Web PWA · 一条 Docker 命令启动</strong>
   <br />
-  基于 Flutter 构建 · 支持多平台 · Material You 设计
+  Flutter 前端 · 内嵌 KuGouMusicApi · 扫码登录 · 浏览器/手机主屏直接听歌
 </p>
 
 <p align="center">
-  <strong>Melos · Docker 一体化部署包</strong>
-  <br />
-  Web PWA + 可选 Linux 桌面版 + 内嵌 KuGouMusicApi
+  <img src="https://img.shields.io/badge/Flutter-3.50+-02569B?logo=flutter&logoColor=white" alt="Flutter" />
+  <img src="https://img.shields.io/badge/Docker-Compose-2496ED?logo=docker&logoColor=white" alt="Docker Compose" />
+  <img src="https://img.shields.io/badge/Web-PWA-4285F4?logo=google-chrome&logoColor=white" alt="Web PWA" />
+  <img src="https://img.shields.io/badge/Port-34962-5b7af0" alt="Port 34962" />
 </p>
 
 <p align="center">
-  <img src="https://img.shields.io/badge/Flutter-3.11+-02569B?logo=flutter&logoColor=white" alt="Flutter" />
-  <img src="https://img.shields.io/badge/Dart-3.11+-0175C2?logo=dart&logoColor=white" alt="Dart" />
-  <img src="https://img.shields.io/badge/Version-2.0.5-4CAF50" alt="Version" />
-  <img src="https://img.shields.io/badge/License-MIT-blue.svg" alt="License" />
-  <img src="https://img.shields.io/badge/Docker-Compose-2496ED?logo=docker&logoColor=white" alt="Docker" />
-</p>
-
-<p align="center">
+  <img src="https://img.shields.io/badge/Platform-Web%20PWA-4285F4" alt="Web PWA" />
+  <img src="https://img.shields.io/badge/Platform-iPhone%20%2F%20iPad-000000?logo=apple&logoColor=white" alt="iPhone / iPad" />
   <img src="https://img.shields.io/badge/Platform-Android-3DDC84?logo=android&logoColor=white" alt="Android" />
-  <img src="https://img.shields.io/badge/Platform-iOS-000000?logo=apple&logoColor=white" alt="iOS" />
-  <img src="https://img.shields.io/badge/Platform-Windows-0078D6?logo=windows&logoColor=white" alt="Windows" />
-  <img src="https://img.shields.io/badge/Platform-macOS-000000?logo=apple&logoColor=white" alt="macOS" />
-  <img src="https://img.shields.io/badge/Platform-Linux-FCC624?logo=linux&logoColor=black" alt="Linux" />
-  <img src="https://img.shields.io/badge/Platform-Web-4285F4?logo=google-chrome&logoColor=white" alt="Web" />
+  <img src="https://img.shields.io/badge/Optional-Linux%20Desktop-FCC624?logo=linux&logoColor=black" alt="Linux Desktop" />
 </p>
 
 ---
 
-## 📖 简介
+## 📖 Melos 是什么
 
-KA Music 是一个功能丰富的 **第三方音乐播放器**，使用 Flutter 框架构建，支持 Android、iOS、Windows、macOS、Linux 及 Web 六大平台。它提供跨平台音乐搜索、在线播放、歌词展示、下载缓存等完整的音乐体验，并采用 Material You 设计语言，支持深色模式和高度自定义主题。
+**Melos 是一个自托管的音乐 Web PWA。** 它把 Flutter 音乐客户端（基于
+[KA Music](https://github.com/umr-xiaomai/kgka_Music_hl)）、酷狗 API
+（KuGouMusicApi）和会话适配网关打包成一套 Docker Compose 服务。
 
-> 🐳 本目录 **Melos** 是 KA Music 的一体化 Docker 部署包：内置 Flutter Linux 桌面版、KuGouMusicApi、会话适配网关与 KasmVNC 网页桌面，无需单独部署后端。
->
-> 🔌 该项目通过第三方 API 获取音乐数据，仅供学习交流使用。
+部署后打开浏览器即可使用：用 **酷狗音乐概念版 App** 扫码登录一次，就能搜索、
+播放、管理歌单、看歌词和评论；在 iPhone / Android 上「添加到主屏幕」后，
+它就像一个原生音乐 App 一样运行。
 
----
+### 为什么是 Melos
 
-## 📸 预览
+- **一条命令部署**：`docker compose -f docker-compose.web.yml up -d --build`。
+- **不需要 VNC**：浏览器原生音频播放，不再通过网页桌面串流声音。
+- **不需要 Flutter SDK**：前端已预编译在 `prebuilt/web`，服务器构建只做镜像打包。
+- **登录态持久化**：会话保存在 `melos-web-data` 数据卷，重启/升级无需重新扫码。
+- **同源代理**：音频、评论、头像都经由 `/api` 转发，避开 HTTPS 混合内容与 CORS。
+- **iPhone 优化**：自动限制渲染倍率、关闭高开销模糊与旋转，输入框不再触发页面放大。
+- **可选桌面版**：需要本地音乐、下载、桌面歌词时，可改用 Linux 桌面版部署。
 
-<!-- TODO: 截图占位 — 请替换为实际截图 -->
-
-## 功能截图
-
-| 首页推荐 | 播放器 | 歌词 |
-|:-------:|:------:|:----:|
-| ![首页](screenshots/home.jpg) | ![播放器](screenshots/player.jpg) | ![歌词](screenshots/lrc.jpg) |
-
-| 个人库 | 搜索页 | 歌单详情 |
-|:------:|:------:|:--------:|
-| ![我的](screenshots/library.jpg) | ![搜索](screenshots/search.jpg) | ![歌单](screenshots/playlist.jpg) |
-
-
----
-
-## ✨ 核心功能
-
-### 🎵 音乐播放
-
-- **多音质切换** — 标准 (128K) / 高品质 (320K) / 无损 (FLAC) 三种音质
-- **智能降级** — 播放失败时自动降级到更低音质重试，保证播放连续性
-- **后台播放** — 支持 Android 通知栏控制及锁屏播放
-- **播放模式** — 列表循环 / 随机播放 / 单曲循环
-- **倍速播放** — 支持 0.5x ~ 3.0x 变速播放
-- **音频均衡器** — 7 种预设音效（流行、摇滚、人声、低音、古典、电子、平板）
-- **低音增强** — 0~100% 强度可调
-- **定时停止** — 支持按时间或当前歌曲播放完毕后自动停止
-
-### 🎤 歌词
-
-- **逐字歌词** — 支持 KRC 格式的逐字高亮歌词
-- **歌词翻译** — 支持翻译和罗马音显示
-- **桌面歌词** — 桌面端悬浮歌词窗口
-- **歌词交互** — 双击跳转进度 / 长按复制 / 字体大小可调
-- **本地歌曲歌词** — 优先读取同名 LRC 和内嵌时间歌词，缺失时自动联网匹配并缓存，后续可离线显示
-
-#### 本地歌曲如何显示歌词
-
-1. 在 Android 的「我的 → 本地音乐」中授权读取音频并扫描歌曲。
-2. 播放歌曲时，先尝试读取可访问的同名 `.lrc` / `.LRC` 文件和音频内嵌时间歌词；LRC 支持 UTF-8、带 BOM 的 UTF-16 和 GBK 编码。
-3. 没有可用时间歌词时，先读取已缓存的匹配结果，再按歌曲名、歌手和时长联网查找歌词。成功匹配后自动保存，下次播放无需再次联网。
-
-匹配依赖音频标签；标签缺失时会尝试从文件名识别。信息不足或找不到对应录音时不会强行套用其他版本的歌词。网络请求失败不会缓存为空结果，下次播放会重试；只有普通文本内嵌歌词时，会在没有匹配结果的情况下展示该文本。Android 的文件访问权限可能影响同目录 LRC 的读取。
-
-### 🔍 搜索与发现
-
-- **多平台搜索** — 支持酷狗 + 网易云音乐双源搜索
-- **搜索建议** — 实时搜索联想
-- **热搜关键词** — 分类展示热门搜索
-- **搜索历史** — 本地保存，支持标签式快捷搜索
-- **每日推荐** — 个性化歌曲推荐
-- **推荐歌单** — 热门歌单浏览
-- **FM 电台** — 推荐电台 + 分类电台
-
-### 📚 音乐库管理
-
-- **歌单管理** — 创建 / 收藏 / 重命名 / 排序 / 批量删除
-- **歌单分享** — 一键复制歌单歌曲列表到剪贴板
-- **歌单导入** — 通过 ID 导入他人歌单
-- **跨平台歌单导入** — 在「我的」粘贴 QQ 音乐 / 网易云歌单分享链接，可新建或选择目标歌单，查看导入进度和未匹配结果
-- **歌单内搜索** — 快速查找歌单中的歌曲
-- **收藏歌曲** — 我喜欢 / 收藏管理
-- **云盘** — 个人云盘音乐存储
-- **专辑商店** — 新专辑浏览
-
-#### 导入 QQ 音乐自建歌单
-
-1. 在 QQ 音乐中把要导入的歌单设为公开，使用「分享」复制歌单链接或整段分享文本。
-2. 登录 KA Music 的酷狗账号，打开「我的 → 导入 QQ / 网易云歌单」，粘贴内容后点击「解析歌单」。
-3. 确认歌单名称和歌曲数量，选择新建歌单或已有的自建歌单，再点击「开始导入」。
-4. 完成后查看新增、已存在、未匹配及请求失败的数量；未匹配和失败歌曲可以展开查看。可停止导入，也可重新导入以重试失败项。
-
-QQ 导入支持短链接和歌单详情链接，直接读取公开歌单并分页获取歌名、歌手和时长，再匹配到当前曲库。目标歌单已有歌曲按 hash 跳过，源歌单中同名但不同歌手的歌曲会分别匹配。私密、失效或不可读取的歌单会提示错误；部分歌曲不可读取时会显示原始数量与可读取数量的差异。网易云分享链接继续使用服务器解析。
-
-### 📥 下载与缓存
-
-- **下载管理** — 支持并发下载、断点续传、进度追踪
-- **播放缓存** — 自动缓存播放过的歌曲，LRU 策略上限 300MB
-- **数据缓存** — SWR（Stale-While-Revalidate）策略，分级 TTL
-- **缓存可视化** — 数据缓存 / 下载 / 播放缓存大小查看与清理
-
-### 🎨 个性化
-
-- **Material You** — 支持 Dynamic Color，8 种预设种子色
-- **深色模式** — 跟随系统或手动切换
-- **自定义背景** — 支持从相册选取图片作为全局背景，可调透明度
-- **自定义 API** — 支持配置自定义 API 地址
-
-### 📊 数据统计
-
-- **播放历史** — 最近播放歌曲记录（最近 500 首）
-- **播放统计** — 累计播放次数、听歌时长
-- **Top 榜单** — 最常听歌手 / 歌曲 Top 10
-
----
-
-## 🏗️ 技术栈
-
-| 类别 | 技术 |
-|---|---|
-| **框架** | Flutter (SDK ^3.11.5) |
-| **语言** | Dart |
-| **音频播放** | `just_audio` — 低延迟音频引擎 |
-| **后台播放** | `audio_service` — 通知栏控制 & 后台保活 |
-| **音频焦点** | `audio_session` — 系统级音频焦点管理 |
-| **HTTP** | `http` (API 请求) + `dio` (文件下载) |
-| **持久化** | `shared_preferences` — 设置 & 缓存 |
-| **状态管理** | `ChangeNotifier` + `AnimatedBuilder`（原生方案） |
-| **路由** | Navigator 1.0 |
-| **设计系统** | Material 3 (Material You) |
-| **代码规范** | `flutter_lints` |
-
----
-
-## 📐 架构设计
-
-```
-┌─────────────────────────────────────┐
-│              UI Layer               │
-│   Pages · Widgets · AppTheme        │
-├─────────────────────────────────────┤
-│           Controllers               │
-│   Auth · Player · Download · Theme  │  ← ChangeNotifier
-├─────────────────────────────────────┤
-│            Services                 │
-│   MusicApi · CacheService           │
-│   DownloadService · AudioHandler    │
-├─────────────────────────────────────┤
-│              Core                   │
-│   ApiClient (HTTP + 重试 + Session) │
-├─────────────────────────────────────┤
-│             Config                  │
-│   AppConfig · Models                │
-└─────────────────────────────────────┘
-```
-
-- **分层清晰** — UI → Controller → Service → Core，单向依赖
-- **手动 DI** — 构造函数注入，无第三方 DI 框架
-- **SWR 缓存** — 先返回缓存数据，后台刷新，失败回退缓存
-- **自动重试** — 网络请求指数退避重试（2 次，500ms/1s）
-- **Session 管理** — `X-Kg-Session-Id` 持久化，自动恢复登录
+> 本项目通过第三方 API 获取音乐数据，仅供学习交流。歌曲版权归原平台与版权方所有；
+> VIP / 版权受限歌曲可能没有可用播放地址。
 
 ---
 
@@ -195,208 +55,346 @@ QQ 导入支持短链接和歌单详情链接，直接读取公开歌单并分�
 
 ### 环境要求
 
-- Flutter SDK >= 3.11.5
-- Dart SDK >= 3.11.5
-- Android Studio / VS Code
-- 目标平台对应的 SDK
+- Docker 24+，Docker Compose v2
+- x86_64 Linux 主机
+- 默认占用宿主机端口 **34962**
 
-### 安装与运行
-
-```bash
-# 克隆仓库
-git clone <repo-url>
-cd kgka_music_hl
-
-# 安装依赖
-flutter pub get
-
-# 运行（选择目标平台）
-flutter run          # 自动检测设备
-flutter run -d android
-flutter run -d ios
-flutter run -d windows
-flutter run -d macos
-flutter run -d linux
-flutter run -d chrome
-```
-
-### 本地歌词回归测试
+### 1. 启动
 
 ```bash
-flutter test test/local_lyrics_test.dart
-```
-
-覆盖 LRC 编码、MP3 / FLAC 内嵌歌词、联网匹配、缓存离线复用、文件替换后缓存失效，以及同名翻唱和不同录音版本的排除。测试夹具为生成的短音频，不依赖个人音乐文件。
-
-### 歌单导入回归测试
-
-```bash
-flutter test test/playlist_import_test.dart
-```
-
-覆盖 QQ 短链接跳转、分页、同名不同歌手、重复歌曲、停止导入、写入失败，以及新建歌单到显示导入结果的界面流程。自动化测试使用模拟服务，不会修改真实账号的歌单。
-
-### 编译环境变量
-
-| 变量 | 说明 | 默认值 |
-|---|---|---|
-| `KA_MUSIC_API_BASE_URL` | 自定义默认 API 地址 | `https://music.api.hoilai.cn` |
-| `KA_MUSIC_DEBUG_LYRICS` | 启用歌词调试日志 | `true` |
-
-```bash
-# 编译时指定环境变量示例
-flutter run --dart-define=KA_MUSIC_API_BASE_URL=https://your-api.com
-```
-
-### 🌐 Melos Web PWA（推荐）
-
-浏览器直接访问，原生浏览器音频，不需要 VNC；最终 Nginx 镜像约 50MB。
-前端使用预编译的 `prebuilt/web`，部署时**不需要 Flutter SDK**。
-
-```bash
+git clone https://github.com/Tomkmonkey/Melos.git
+cd Melos
 docker compose -f docker-compose.web.yml up -d --build
 ```
 
-默认地址：`http://<主机IP>:34962`
+> 已经拿到本项目目录时，直接进入该目录执行最后一条命令即可。
 
-1. 用 **酷狗音乐概念版 App** 扫码登录（只需一次）。
-2. 登录态保存在 `melos-web-data` 数据卷 + 浏览器 localStorage。
-3. 支持 PWA 安装；公网部署需要 HTTPS（localhost 除外）。
-4. 音频通过同源 `/api/audio-proxy` 转发，支持拖动进度，避免 HTTPS 混合内容。
-5. 评论、头像与配图通过同源 `/api/comment-proxy`、`/api/audio-proxy` 转发，
-   避免浏览器 CORS 与混合内容限制。
-6. Web 端已隐藏本地音乐、下载、桌面歌词等平台功能。
+打开 `http://<主机IP>:34962`。
 
-> 网页端切歌依赖内置的 `third_party/just_audio_web`（0.4.17 本地补丁）。
-> 上游 0.4.16 会缓存首次加载的音源树，导致歌单内切歌后封面/歌词变了、
-> 声音却仍是同一首；补丁已通过 `dependency_overrides` 接入，重新构建时
-> `flutter pub get` 会自动使用。
->
-> iPhone/iPad 会自动启用轻量渲染：渲染倍率上限 2x、关闭实时背景模糊与
-> 封面旋转、歌词刷新约 30fps；输入框字号固定为 16px，避免 iOS 聚焦时
-> 自动放大页面。桌面浏览器保持完整的液态玻璃视觉效果。
+### 2. 登录
 
-修改 Dart 代码后重新生成前端：
+1. 在登录页选择「扫码登录」。
+2. 使用 **酷狗音乐概念版 App** 扫码并确认。
+3. 登录态写入 `melos-web-data` 数据卷与浏览器 localStorage，下次打开自动恢复。
+
+### 3. 安装为 PWA
+
+- **iPhone / iPad**：Safari 打开 → 分享 → 「添加到主屏幕」。
+- **Android**：Chrome 打开 → 菜单 → 「安装应用」/「添加到主屏幕」。
+- **桌面浏览器**：Chrome / Edge 地址栏右侧的安装图标。
+
+> 公网部署建议使用 HTTPS：Service Worker 与 PWA 安装要求安全上下文
+>（`localhost` 除外）。可用 Caddy / Nginx / 反向代理自行配置证书。
+
+### 常用命令
 
 ```bash
-./docker/build-web.sh
-docker compose -f docker-compose.web.yml up -d --build
+# 查看日志
+docker compose -f docker-compose.web.yml logs -f
+
+# 停止
+docker compose -f docker-compose.web.yml down
+
+# 停止并清空登录态 / 数据（不可恢复）
+docker compose -f docker-compose.web.yml down -v
+
+# 更换端口
+MELOS_WEB_PORT=8080 docker compose -f docker-compose.web.yml up -d --build
 ```
 
-如需在 Docker 内从源码编译前端，使用 `Dockerfile.web.source`。
-
-更新方法（记得进入目录）：
-```bash
-  git pull origin main       # 拉取更新
-  docker compose -f docker-compose.web.yml up -d --build
-```
 ---
 
-### 🖥️ Linux 桌面版（KasmVNC，可选）
+## ✨ 功能亮点
 
-如需完整桌面能力（本地音乐、下载、桌面歌词等），可使用桌面版部署。
+> 以下为 Web PWA 中可用的功能。本地音乐、下载、桌面歌词等平台能力默认隐藏，
+> 需要时请使用可选的 Linux 桌面版。
 
+### 🎵 播放
 
-本目录即完整的 Docker 部署包，`third_party/KuGouMusicApi` 与会话适配网关已经内置，
-无需单独安装 Flutter 或部署后端。
+- 标准 / 高品质 / 无损多音质切换，失败自动降级重试
+- 列表循环 / 随机播放 / 单曲循环
+- 0.5x ~ 3.0x 倍速播放
+- 均衡器预设与低音增强
+- 定时停止（按时间或播完当前歌曲）
+- 播放队列、进度恢复、最近播放
 
-**要求**：Docker 24+ / Compose v2、x86_64 主机。默认使用仓库内预编译的 Linux 应用，
-部署时无需安装 Flutter SDK，首次构建通常约 1–2 分钟。
+### 🎤 歌词与评论
+
+- KRC 逐字歌词、翻译、罗马音
+- 双击歌词跳转进度、调整字号
+- 热门 / 最新评论、楼层回复、评论配图
+- 评论与头像经由同源代理加载，HTTPS 下也能正常显示
+
+### 🔍 搜索与曲库
+
+- 酷狗 + 网易云双源搜索、搜索联想、热搜与历史
+- 每日推荐、推荐歌单、FM 电台
+- 歌单创建 / 收藏 / 重命名 / 排序 / 批量删除
+- 导入 QQ 音乐 / 网易云歌单，显示匹配与失败明细
+- 收藏、云盘、专辑商店
+
+#### 导入 QQ 音乐 / 网易云歌单
+
+1. 在来源 App 中把歌单设为公开并复制分享链接（或整段分享文本）。
+2. 打开 Melos 的「我的 → 导入 QQ / 网易云歌单」，粘贴后点击「解析歌单」。
+3. 确认名称与数量，选择新建歌单或已有歌单，点击「开始导入」。
+4. 导入完成后可查看新增、已存在、未匹配与失败数量；支持停止和重试。
+
+### 🎨 个性化与数据
+
+- Material You 动态取色、深色模式、自定义背景
+- 播放历史、听歌时长、最常听歌手 / 歌曲 Top 10
+- PWA 独立窗口、离线壳与图标
+
+---
+
+## 📸 界面预览
+
+| 首页 | 播放器 | 歌词 |
+|:----:|:------:|:----:|
+| ![首页](screenshots/home.jpg) | ![播放器](screenshots/player.jpg) | ![歌词](screenshots/lrc.jpg) |
+
+| 我的 | 搜索 | 歌单 |
+|:----:|:----:|:----:|
+| ![我的](screenshots/library.jpg) | ![搜索](screenshots/search.jpg) | ![歌单](screenshots/playlist.jpg) |
+
+---
+
+## 🏗️ 架构与实现
+
+```
+浏览器 / PWA
+      │  http(s)://<host>:34962
+      ▼
+┌───────────────────────────────────────────────────┐
+│ Docker 项目 melos-web                             │
+│                                                   │
+│  melos-web (Nginx)                               │
+│    ├── /            → prebuilt/web 静态文件       │
+│    └── /api/        → melos-api:3005              │
+│                                                   │
+│  melos-api (Node 18)                              │
+│    ├── 会话网关 server.js                          │
+│    │     ├── /audio-proxy    音频 Range 转发       │
+│    │     ├── /comment-proxy  评论转发              │
+│    │     └── 登录 / 会话协议适配                   │
+│    └── KuGouMusicApi :3006 (platform=lite)        │
+└───────────────────────────────────────────────────┘
+```
+
+### 组成
+
+| 组件 | 说明 |
+|---|---|
+| `melos-web` | Nginx + 预编译 Flutter Web，默认端口 80（宿主机 34962） |
+| `melos-api` | Node 18，内置会话网关与 KuGouMusicApi |
+| `melos-web-data` | 登录会话、网关数据持久化卷 |
+| `prebuilt/web` | 已构建的前端产物，部署时不需要 Flutter SDK |
+
+### 关键设计
+
+- **会话网关**：客户端只认 `X-Kg-Session-Id` / `t1` 头，网关转换成酷狗 Cookie；
+  扫码登录、刷新、退出都由网关适配。
+- **同源代理**：音频与评论接口多为 HTTP 且不带 CORS 头，直接请求会被浏览器拦截；
+  `/api/audio-proxy` 与 `/api/comment-proxy` 在服务端转发，并严格限制目标域名。
+- **Range 透传**：音频代理完整转发 `Range` / `206`，支持拖动进度。
+- **预编译产物**：Web 与 Linux 前端都在开发机编译，部署机只负责打包镜像。
+- **网页切歌补丁**：内置 `third_party/just_audio_web`（0.4.17），修复上游缓存导致
+  「歌单切歌后仍播放同一首」的问题。
+
+---
+
+## 📱 Web 端专项说明
+
+- **音频**：`/api/audio-proxy` 转发酷狗 CDN，支持 Range 与拖动进度。
+- **评论**：`/api/comment-proxy` 转发评论列表与楼层回复；评论图片走音频代理。
+- **切歌**：本地补丁修复 `just_audio_web` 音源缓存问题（见 `third_party/just_audio_web`）。
+- **iPhone / iPad 轻量渲染**：
+  - 渲染倍率上限 2x；
+  - 关闭实时背景模糊、封面模糊、歌词模糊与封面旋转；
+  - 歌词刷新约 30fps；
+  - 输入框字号固定 16px，避免 iOS 聚焦时自动放大页面。
+- **PWA**：`web/manifest.json` + Service Worker，支持安装到主屏幕与独立窗口运行。
+
+---
+
+## 🖥️ 可选：Linux 桌面版（KasmVNC）
+
+需要 **本地音乐、下载管理、桌面歌词** 等完整桌面能力时，可使用桌面版。
+应用运行在容器内的 KasmVNC 网页桌面中，浏览器打开即可看到图形界面。
 
 ```bash
 docker compose up -d --build
 ```
 
-默认使用宿主机端口 **34962**，浏览器打开 `http://<主机IP>:34962`：
+默认地址同样是 `http://<主机IP>:34962`。
 
-1. 在网页桌面里用 **酷狗音乐概念版 App** 扫码登录（只需一次）。
-2. 点击网页顶部中间 Kclient 工具栏的 **喇叭图标** 开启网页声音。
-3. 登录态、设置与缓存保存在 `ka-music-config` 数据卷中，重启容器无需重新扫码。
+1. 在网页桌面里用酷狗概念版 App 扫码登录。
+2. 点击网页顶部 Kclient 工具栏的喇叭图标开启网页声音（浏览器要求一次点击）。
+3. 登录态、设置与缓存保存在 `ka-music-config` 数据卷。
 
-> 默认镜像直接使用 `prebuilt/linux-x64`，不会在部署时重新编译 Flutter。
-> 修改 Dart 代码后运行 `./docker/build-linux.sh` 重新生成预编译 bundle；
-> 如需在 Docker 内从源码编译，请使用 `Dockerfile.source`。
+> 默认镜像使用 `prebuilt/linux-x64`，部署时不会下载 Flutter SDK。
+> 端口、访问密码、API 代理等配置见 [docker/README.md](docker/README.md)。
 
-端口、访问密码、API 代理等配置见 [docker/README.md](docker/README.md)。
+---
+
+## 🛠️ 开发与构建
+
+### 环境
+
+- Flutter 3.50+（Dart 3.14+，`pubspec.yaml` 要求 `sdk: ^3.11.5`）
+- 可选：Docker 24+ / Compose v2（构建镜像时）
+
+```bash
+flutter pub get
+flutter run -d chrome          # Web 调试
+flutter run -d linux           # 桌面版调试
+```
+
+> 项目通过 `dependency_overrides` 使用 `third_party/just_audio_web`，
+> `flutter pub get` 会自动解析，无需额外配置。
+
+### 重新生成预编译产物
+
+```bash
+# 重新构建 Web 前端 → prebuilt/web
+./docker/build-web.sh
+
+# 重新构建 Linux 桌面版 → prebuilt/linux-x64
+./docker/build-linux.sh
+
+# 重新构建并启动 Web 镜像
+docker compose -f docker-compose.web.yml up -d --build
+```
+
+如果希望在 Docker 内从源码编译：
+
+- Web：`Dockerfile.web.source`
+- 桌面版：`Dockerfile.source`
+
+### 编译环境变量
+
+| 变量 | 说明 | 默认值 |
+|---|---|---|
+| `KA_MUSIC_API_BASE_URL` | 前端默认 API 地址 | `https://music.api.hoilai.cn` |
+| `KA_MUSIC_DEBUG_LYRICS` | 歌词调试日志 | `true` |
+
+Web 预编译使用 `--dart-define=KA_MUSIC_API_BASE_URL=/api`，与 Nginx 同源代理配合。
+
+### 测试
+
+```bash
+flutter test test/local_lyrics_test.dart
+flutter test test/playlist_import_test.dart
+```
+
+覆盖 LRC 编码、内嵌歌词、联网匹配与缓存，以及 QQ / 网易云歌单导入流程。
 
 ---
 
 ## 📁 项目结构
 
 ```
-Dockerfile.web                # Web PWA：Nginx + 预编译 Flutter Web
-Dockerfile.api                # Web PWA 后端：KuGouMusicApi + 网关
-Dockerfile.web.source         # 可选：在 Docker 内从 Flutter 源码构建 Web
-docker-compose.web.yml        # Web PWA 一键启动
-docker/nginx-web.conf         # Nginx 静态 + /api 同源反代
-docker/build-web.sh           # 重新生成 prebuilt/web
-prebuilt/web/                 # 预编译 Flutter Web（默认 Web 镜像直接使用）
-Dockerfile                    # 桌面版：预编译 Linux bundle + API + KasmVNC
-Dockerfile.source             # 桌面版可选：Docker 内从 Flutter 源码构建
-docker-compose.yml            # 桌面版一键启动
-docker/                       # 会话网关、s6 服务、KasmVNC 启动脚本、build-linux.sh
-prebuilt/linux-x64/           # 预编译 Flutter Linux 应用
-third_party/KuGouMusicApi/    # 内嵌酷狗 API
-third_party/just_audio_web/   # 网页音频插件本地补丁（修复网页切歌）
-lib/
-├── main.dart                 # 应用入口
-├── assets/
-│   └── logo.jpg              # App Logo
-├── config/
-│   └── app_config.dart       # 全局配置（API 地址、缓存大小等）
-├── core/
-│   └── api_client.dart       # HTTP 客户端（重试、Session）
-├── controllers/
-│   ├── auth_controller.dart  # 登录认证
-│   ├── player_controller.dart# 播放引擎
-│   ├── download_controller.dart # 下载管理
-│   └── theme_controller.dart # 主题管理
-├── models/
-│   ├── music_models.dart     # 音乐领域模型
-│   └── app_version.dart      # 版本更新模型
-├── services/
-│   ├── music_api.dart        # API 接口封装
-│   ├── cache_service.dart    # 数据缓存（SWR）
-│   ├── download_service.dart # 文件下载服务
-│   ├── music_audio_handler.dart # 后台音频服务
-│   └── ...                   # 其他服务
-└── ui/
-    ├── app_theme.dart        # 主题定义
-    ├── adaptive_layout.dart  # 响应式布局
-    ├── pages/                # 页面
-    │   ├── home_page.dart    # 首页
-    │   ├── player_page.dart  # 播放器
-    │   ├── library_page.dart # 我的
-    │   ├── search_page.dart  # 搜索
-    │   └── ...               # 其他页面
-    └── widgets/              # 可复用组件
-        ├── mini_player.dart  # 迷你播放栏
-        ├── artwork.dart      # 封面组件
-        └── ...               # 其他组件
+docker-compose.web.yml       # Web PWA 一键启动
+Dockerfile.web               # Web 镜像：Nginx + prebuilt/web
+Dockerfile.api               # API 镜像：KuGouMusicApi + 会话网关
+Dockerfile.web.source        # 可选：Docker 内从源码构建 Web
+docker/
+├── nginx-web.conf           # 静态资源 + /api 同源反代
+├── gateway/server.js        # 会话网关、音频/评论代理
+├── build-web.sh             # 重新生成 prebuilt/web
+└── build-linux.sh           # 重新生成 prebuilt/linux-x64
+prebuilt/web/                # 预编译 Flutter Web（推荐部署方式）
+prebuilt/linux-x64/          # 预编译 Linux 桌面版（可选）
+web/                         # PWA shell、manifest、图标
+lib/                         # Flutter 应用源码
+third_party/
+├── KuGouMusicApi/           # 内嵌酷狗 API
+└── just_audio_web/          # 网页切歌修复补丁
+Dockerfile / docker-compose.yml   # 可选 Linux 桌面版
 ```
+
+应用源码主要目录：
+
+```
+lib/
+├── main.dart                # 入口
+├── config/                  # API 地址等配置
+├── core/                    # HTTP 客户端、性能开关
+├── controllers/             # 登录、播放、下载、主题
+├── services/                # API、缓存、音频、评论、歌词
+├── models/                  # 领域模型
+└── ui/                      # 页面、组件、主题
+```
+
+---
+
+## ❓ 常见问题
+
+**评论区一直加载不出来？**
+更新到最新版本，并确认 **api 镜像也重新构建**：
+
+```bash
+git pull origin main
+docker compose -f docker-compose.web.yml up -d --build
+```
+
+旧镜像没有 `/api/comment-proxy`，只重启容器不会生效。
+
+**PWA 无法安装 / 离线壳不工作？**
+需要 HTTPS（`localhost` 除外）。公网部署请配置反向代理与证书。
+
+**端口被占用？**
+使用 `MELOS_WEB_PORT=8080 docker compose -f docker-compose.web.yml up -d --build`。
+
+**升级后浏览器仍是旧界面？**
+彻底关闭 PWA 后重新打开，或在浏览器中强制刷新（Ctrl+Shift+R）。
+
+**歌曲无法播放？**
+VIP / 版权受限歌曲可能不返回播放地址；也可能是网络或音质降级后仍无可用源。
+
+**登录态会丢吗？**
+不会。会话保存在 `melos-web-data` 数据卷；只有执行 `down -v` 才会清空。
+
+---
+
+## 🔄 更新方式
+
+```bash
+cd Melos
+git pull origin main
+docker compose -f docker-compose.web.yml up -d --build
+```
+
+- 必须带 `--build`：API 与前端都可能更新。
+- 数据卷不会删除，升级后无需重新扫码。
+- 桌面版更新：`docker compose up -d --build`。
 
 ---
 
 ## 📝 更新日志
 
-详细的版本更新日志请查看 [update.md](update.md)。
+应用功能更新见 [update.md](update.md)（当前应用版本 3.3.0）。
 
-**v2.0.5** 主要更新：
+Melos 部署层近期更新：
 
-- 播放历史 & 统计页面
-- 搜索历史、缓存管理可视化
-- 歌单排序 & 批量删除 & 分享 & 导入
-- 智能音质降级 & 网络自动重试
-- 封面加载 Shimmer 动画
+- 新增 Web PWA 部署：Nginx + Node 网关 + 同源 API/音频代理
+- 修复 Web 歌单切歌后仍播放同一首（内置 `just_audio_web` 补丁）
+- 修复 Web 评论区无法加载（新增 `/api/comment-proxy`）
+- 修复扫码登录约 2 分钟延迟（登录接口绕过 API 缓存）
+- iPhone 输入框聚焦放大与 PWA 卡顿/发热优化
 
 ---
 
-## 📄 许可证
+## 📄 声明
 
-本项目仅供学习交流使用，请勿用于商业用途。
+- Melos 基于 [KA Music](https://github.com/umr-xiaomai/kgka_Music_hl) 构建，音乐数据来自
+  酷狗官方接口（[KuGouMusicApi](https://github.com/MakcRe/KuGouMusicApi)）。
+- 本项目仅供学习交流，请勿用于商业用途；请支持正版音乐。
+- 与酷狗音乐及其关联公司无任何隶属关系。
 
 ---
 
 <p align="center">
-  <sub>Made with XiaoMai and Flutter</sub>
+  <sub>Melos · 在你的浏览器里，听自己的歌单</sub>
 </p>
