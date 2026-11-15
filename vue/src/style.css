@@ -1029,7 +1029,7 @@ input {
 .full-player {
   min-height: 100dvh;
   padding: calc(var(--space-4) + env(safe-area-inset-top)) var(--space-4)
-    calc(var(--space-8) + env(safe-area-inset-bottom));
+    calc(var(--space-12) + env(safe-area-inset-bottom));
   background: var(--white);
 }
 
@@ -1083,11 +1083,70 @@ input {
   font-size: 13px;
 }
 
-.player-panel {
+.player-controls-block {
   display: flex;
   flex-direction: column;
   gap: var(--space-2);
+  width: 100%;
+  margin-top: var(--space-5);
+}
+
+.player-panel {
+  display: none;
+  flex-direction: column;
+  gap: var(--space-2);
   min-width: 0;
+}
+
+.player-layout.mobile-page-lyrics .player-hero {
+  display: none;
+}
+
+.player-layout.mobile-page-lyrics .player-panel {
+  display: flex;
+}
+
+.lyrics-page-head {
+  margin-bottom: var(--space-1);
+}
+
+.lyrics-page-title {
+  overflow: hidden;
+  color: var(--text);
+  font-size: 20px;
+  font-weight: 650;
+  letter-spacing: -0.02em;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.lyrics-page-artist {
+  margin-top: 2px;
+  color: var(--text-muted);
+  font-size: 12px;
+}
+
+.mobile-pager-dots {
+  position: fixed;
+  right: 0;
+  bottom: calc(12px + env(safe-area-inset-bottom));
+  left: 0;
+  z-index: 20;
+  display: flex;
+  justify-content: center;
+  gap: var(--space-5);
+}
+
+.mobile-pager-dots button {
+  padding: var(--space-1) 2px;
+  color: var(--text-faint);
+  font-size: 11px;
+  font-weight: 550;
+}
+
+.mobile-pager-dots button.active {
+  color: var(--text);
+  font-weight: 650;
 }
 
 .range-row {
@@ -1731,7 +1790,7 @@ input[type='range'] {
 
   .queue-scroll,
   .lyrics-scroll {
-    max-height: 34dvh;
+    max-height: 56dvh;
   }
 
   .playlist-hero {
@@ -1811,9 +1870,25 @@ input[type='range'] {
 
   .player-layout {
     grid-template-columns: minmax(300px, 430px) minmax(0, 1fr);
+    align-items: start;
     gap: clamp(32px, 5vw, 64px);
     max-width: 1100px;
     padding: var(--space-4) 0 var(--space-8);
+  }
+
+  .player-layout .player-hero,
+  .player-layout.mobile-page-lyrics .player-hero {
+    display: block;
+  }
+
+  .player-layout .player-panel,
+  .player-layout.mobile-page-lyrics .player-panel {
+    display: flex;
+  }
+
+  .lyrics-page-head,
+  .mobile-pager-dots {
+    display: none;
   }
 
   .full-player-title {

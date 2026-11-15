@@ -134,7 +134,8 @@ MELOS_WEB_PORT=8080 docker compose -f docker-compose.web.yml up -d --build
 ### 🎤 歌词
 
 - LRC 逐行同步、翻译合并、自动滚动
-- 播放页「歌词 / 播放队列」切换
+- 桌面端：封面在左，歌词固定在右侧
+- 移动端：封面页与歌词页左右滑动切换（也可点击底部「播放 / 歌词」）
 
 ### 💬 评论
 
@@ -167,9 +168,13 @@ MELOS_WEB_PORT=8080 docker compose -f docker-compose.web.yml up -d --build
 |:--------:|:--------:|
 | ![桌面首页](screenshots/vue-home.png) | ![手机首页](screenshots/vue-mobile.png) |
 
-| 歌词页 | 评论面板 |
+| 歌词页（桌面） | 手机歌词页 |
 |:------:|:--------:|
-| ![歌词页](screenshots/vue-lyrics.png) | ![评论](screenshots/vue-comments.png) |
+| ![歌词页](screenshots/vue-lyrics.png) | ![手机歌词](screenshots/vue-lyrics-mobile.png) |
+
+| 手机播放页 | 评论面板 |
+|:----------:|:--------:|
+| ![手机播放](screenshots/vue-player-mobile.png) | ![评论](screenshots/vue-comments.png) |
 
 > Flutter 版界面截图仍保留在 `screenshots/home.jpg` 等文件中，可在 `main` 分支查看。
 
