@@ -7,11 +7,13 @@
 <p align="center">
   <strong>自托管音乐 Web PWA · 一条 Docker 命令启动</strong>
   <br />
-  Flutter 前端 · 内嵌 KuGouMusicApi · 扫码登录 · 浏览器/手机主屏直接听歌
+  Vue 3 前端 · 内嵌 KuGouMusicApi · 扫码登录 · 自适应桌面/手机
 </p>
 
 <p align="center">
-  <img src="https://img.shields.io/badge/Flutter-3.50+-02569B?logo=flutter&logoColor=white" alt="Flutter" />
+  <img src="https://img.shields.io/badge/Vue-3-42B883?logo=vue.js&logoColor=white" alt="Vue 3" />
+  <img src="https://img.shields.io/badge/Vite-8-646CFF?logo=vite&logoColor=white" alt="Vite" />
+  <img src="https://img.shields.io/badge/TypeScript-6-3178C6?logo=typescript&logoColor=white" alt="TypeScript" />
   <img src="https://img.shields.io/badge/Docker-Compose-2496ED?logo=docker&logoColor=white" alt="Docker Compose" />
   <img src="https://img.shields.io/badge/Web-PWA-4285F4?logo=google-chrome&logoColor=white" alt="Web PWA" />
   <img src="https://img.shields.io/badge/Port-34962-5b7af0" alt="Port 34962" />
@@ -21,24 +23,25 @@
   <img src="https://img.shields.io/badge/Platform-Web%20PWA-4285F4" alt="Web PWA" />
   <img src="https://img.shields.io/badge/Platform-iPhone%20%2F%20iPad-000000?logo=apple&logoColor=white" alt="iPhone / iPad" />
   <img src="https://img.shields.io/badge/Platform-Android-3DDC84?logo=android&logoColor=white" alt="Android" />
-  <img src="https://img.shields.io/badge/Optional-Linux%20Desktop-FCC624?logo=linux&logoColor=black" alt="Linux Desktop" />
+  <img src="https://img.shields.io/badge/Optional-Linux%20Desktop%20(Flutter)-FCC624?logo=linux&logoColor=black" alt="Optional Linux Desktop (Flutter)" />
 </p>
 
 ---
 
 ## 📖 Melos 是什么
 
-**Melos 是一个自托管的音乐 Web PWA。** 它把 Flutter 音乐客户端（基于
-[KA Music](https://github.com/umr-xiaomai/kgka_Music_hl)）、酷狗 API
+**Melos 是一个自托管的音乐 Web PWA。** 它把 Vue 3 Web 前端、酷狗 API
 （KuGouMusicApi）和会话适配网关打包成一套 Docker Compose 服务。
+Web 端基于 [KA Music](https://github.com/umr-xiaomai/kgka_Music_hl) 的功能重构；
+可选的 Linux 桌面版仍使用 Flutter。
 
 部署后打开浏览器即可使用：用 **酷狗音乐概念版 App** 扫码登录一次，就能搜索、
 播放、管理歌单、看歌词和评论；在 iPhone / Android 上「添加到主屏幕」后，
 它就像一个原生音乐 App 一样运行。
 
-> **dev 分支说明**：Web 前端已重构为 **Vue 3 + Vite**（源码在 `vue/`），
+> **dev 分支说明**：Web 前端已重构为 **Vue 3 + Vite + TypeScript**（源码在 `vue/`），
 > `docker-compose.web.yml` 默认构建 Vue 版本，产物为 `prebuilt/vue`。
-> Flutter Web 与 Linux 桌面版源码仍保留在仓库中；`main` 分支为 Flutter 版本。
+> 可选的 Linux 桌面版仍使用 Flutter；`main` 分支保留 Flutter Web 版本。
 
 ### 为什么是 Melos
 
