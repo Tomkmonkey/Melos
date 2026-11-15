@@ -64,8 +64,55 @@ export const usePlayerStore = defineStore('player', () => {
   let requestSerial = 0
   let restorePosition = positionMs.value
   let lastPersisted = 0
+  let lyricFrame: number | undefined
+  let lastLyricFrame = 0
+  let smoothProgressRequested = false
 
   audio.volume = volume.value
+
+  // 逐字歌词需要比 timeupdate 更高的刷新率：仅在播放页打开时以约 30fps 更新进度。
+  function tickLyrics(now: number) {
+    lyricFrame = undefined
+    if (audio.paused) {
+      lastLyricFrame = 0
+      return
+    }
+    if (now - lastLyricFrame >= 33) {
+      lastLyricFrame = now
+      const next = Math.round(audio.currentTime * 1000)
+      if (next !== positionMs.value) positionMs.value = next
+    }
+    lyricFrame = requestAnimationFrame(tickLyrics)
+  }
+
+  function startLyricTicker() {
+    if (!smoothProgressRequested) return
+    if (lyricFrame === undefined) {
+      lastLyricFrame = 0
+      lyricFrame = requestAnimationFrame(tickLyrics)
+    }
+  }
+
+  function stopLyricTicker() {
+    if (lyricFrame !== undefined) {
+      cancelAnimationFrame(lyricFrame)
+      lyricFrame = undefined
+    }
+    lastLyricFrame = 0
+  }
+
+  function startSmoothProgress() {
+    smoothProgressRequested = true
+    if (!audio.paused) startLyricTicker()
+  }
+
+  function stopSmoothProgress() {
+    smoothProgressRequested = false
+    stopLyricTicker()
+    if (hasSource.value && !Number.isNaN(audio.currentTime)) {
+      positionMs.value = Math.round(audio.currentTime * 1000)
+    }
+  }
 
   function persist(force = false) {
     const now = Date.now()
@@ -120,12 +167,15 @@ export const usePlayerStore = defineStore('player', () => {
   audio.addEventListener('play', () => {
     playing.value = true
     error.value = ''
+    startLyricTicker()
   })
   audio.addEventListener('pause', () => {
     playing.value = false
+    stopLyricTicker()
     persist(true)
   })
   audio.addEventListener('ended', () => {
+    stopLyricTicker()
     void handleEnded()
   })
   audio.addEventListener('error', () => {
@@ -384,6 +434,8 @@ export const usePlayerStore = defineStore('player', () => {
     repeat,
     error,
     hasSource,
+    startSmoothProgress,
+    stopSmoothProgress,
     playQueue,
     playSong,
     toggle,

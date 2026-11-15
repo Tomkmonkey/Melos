@@ -11,13 +11,20 @@ const player = usePlayerStore()
 
 const immersive = computed(() => route.meta.immersive === true)
 const showPlayer = computed(() => !immersive.value && !!player.current)
+
+// 进入播放页再返回时保留发现 / 搜索 / 歌单页的 DOM 与滚动位置，避免重新加载。
+const cachedViews = ['HomeView', 'SearchView', 'LibraryView', 'PlaylistView']
 </script>
 
 <template>
   <div class="app-shell" :class="{ immersive }">
     <AppSidebar v-if="!immersive" />
     <main class="main" :class="{ 'no-player': !showPlayer, immersive }">
-      <RouterView />
+      <RouterView v-slot="{ Component }">
+        <KeepAlive :include="cachedViews">
+          <component :is="Component" />
+        </KeepAlive>
+      </RouterView>
     </main>
     <PlayerBar v-if="showPlayer" />
     <BottomNav v-if="!immersive" />

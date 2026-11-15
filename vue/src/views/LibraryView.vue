@@ -11,6 +11,8 @@ import { useAuthStore } from '../stores/auth'
 const auth = useAuthStore()
 const router = useRouter()
 
+defineOptions({ name: 'LibraryView' })
+
 const playlists = ref<Playlist[]>([])
 const loading = ref(false)
 const error = ref('')

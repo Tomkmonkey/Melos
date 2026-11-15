@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { onMounted, ref } from 'vue'
+import { computed, onMounted, ref, watch } from 'vue'
 import { Play } from 'lucide-vue-next'
 import CoverImage from '../components/CoverImage.vue'
 import PlaylistCard from '../components/PlaylistCard.vue'
@@ -12,6 +12,12 @@ import { greeting } from '../utils'
 
 const auth = useAuthStore()
 const player = usePlayerStore()
+
+defineOptions({ name: 'HomeView' })
+
+const avatarInitial = computed(() =>
+  (auth.profile?.nickname ?? 'M').trim().slice(0, 1).toUpperCase(),
+)
 
 const cards = ref<RecommendedCard[]>([])
 const playlists = ref<Playlist[]>([])
@@ -63,11 +69,19 @@ function playCardSong(card: RecommendedCard, index: number) {
 }
 
 onMounted(load)
+
+// 首页被 KeepAlive 缓存：登录 / 退出后重新拉取个性化推荐。
+watch(
+  () => auth.loggedIn,
+  (value, previous) => {
+    if (value !== previous) void load()
+  },
+)
 </script>
 
 <template>
   <div class="page wide">
-    <header class="page-header">
+    <header class="page-header home-header">
       <div>
         <div class="eyebrow">{{ greeting() }}</div>
         <h1 class="page-title">发现音乐</h1>
@@ -76,9 +90,22 @@ onMounted(load)
       <RouterLink v-if="!auth.loggedIn" class="btn btn-primary btn-sm" to="/login">
         扫码登录
       </RouterLink>
-      <div v-else class="chip">
-        {{ auth.profile?.nickname ? `已登录 · ${auth.profile.nickname}` : '已登录' }}
-      </div>
+      <RouterLink
+        v-else
+        class="avatar-link"
+        to="/library"
+        :aria-label="`我的音乐，${auth.profile?.nickname ?? '已登录'}`"
+        :title="auth.profile?.nickname ?? '我的音乐'"
+      >
+        <img
+          v-if="auth.profile?.avatar"
+          :src="auth.profile.avatar"
+          alt=""
+          referrerpolicy="no-referrer"
+        />
+        <span v-else class="avatar-initial">{{ avatarInitial }}</span>
+        <span class="presence-dot" aria-hidden="true"></span>
+      </RouterLink>
     </header>
 
     <div v-if="loading" class="recommend-grid">

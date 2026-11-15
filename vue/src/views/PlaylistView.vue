@@ -13,6 +13,8 @@ const props = defineProps<{ id: string }>()
 const router = useRouter()
 const player = usePlayerStore()
 
+defineOptions({ name: 'PlaylistView' })
+
 const songs = ref<Song[]>([])
 const title = ref('歌单')
 const cover = ref<string | undefined>()

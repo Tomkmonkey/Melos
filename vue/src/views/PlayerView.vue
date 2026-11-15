@@ -1,7 +1,8 @@
 <script setup lang="ts">
-import { computed, nextTick, ref, watch } from 'vue'
+import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import {
+  Captions,
   ChevronDown,
   ListMusic,
   MessageSquare,
@@ -77,6 +78,14 @@ watch(
   { immediate: true },
 )
 
+onMounted(() => {
+  player.startSmoothProgress()
+})
+
+onBeforeUnmount(() => {
+  player.stopSmoothProgress()
+})
+
 async function scrollActiveLyric() {
   await nextTick()
   const index = activeLyricIndex.value
@@ -113,6 +122,14 @@ function showLyricsPage() {
   void scrollActiveLyric()
 }
 
+function toggleLyricsPage() {
+  if (mobilePage.value === 'player') {
+    showLyricsPage()
+  } else {
+    showPlayerPage()
+  }
+}
+
 function openQueue() {
   tab.value = 'queue'
   if (window.innerWidth < 960) mobilePage.value = 'lyrics'
@@ -144,11 +161,11 @@ function onTouchEnd(event: TouchEvent) {
   const dy = touch.clientY - touchStartY
   if (Math.abs(dx) < 50 || Math.abs(dx) < Math.abs(dy) * 1.2) return
 
-  // 封面页与歌词页互切：向右或向左滑都可以。
-  mobilePage.value = mobilePage.value === 'player' ? 'lyrics' : 'player'
-  if (mobilePage.value === 'lyrics') {
-    tab.value = 'lyrics'
-    void scrollActiveLyric()
+  // 向右滑进入歌词页，向左滑回到封面页。
+  if (mobilePage.value === 'player' && dx > 0) {
+    showLyricsPage()
+  } else if (mobilePage.value === 'lyrics' && dx < 0) {
+    showPlayerPage()
   }
 }
 
@@ -158,6 +175,18 @@ const progress = computed(() => {
 })
 
 const volumeProgress = computed(() => Math.round(player.volume * 100))
+
+const CREDIT_PATTERN =
+  /^(作词|作曲|编曲|制作人|词|曲|演唱|原唱|混音|母带|吉他|贝斯|鼓|和声|录音|监制|出品|发行|OP|SP|词曲|制作|Lyricist|Composer|Arranger|Producer)\s*[：:]/i
+
+// 标题与制作名单不显示音译，避免歌词页顶部出现无关的罗马音。
+function showRomanization(line: LyricLine, index: number): boolean {
+  if (line.translation || !line.romanization) return false
+  const text = line.text.trim()
+  if (CREDIT_PATTERN.test(text)) return false
+  if (index === 0 && text.includes(' - ')) return false
+  return true
+}
 
 function close() {
   if (window.history.length > 1) router.back()
@@ -187,6 +216,16 @@ function playAt(index: number) {
       </button>
       <span class="muted" style="font-size: 12px; letter-spacing: 0.12em">NOW PLAYING</span>
       <div style="display: flex; gap: 2px">
+        <button
+          class="icon-btn mobile-lyrics-toggle"
+          type="button"
+          aria-label="歌词"
+          :aria-pressed="mobilePage === 'lyrics'"
+          :class="{ active: mobilePage === 'lyrics' }"
+          @click="toggleLyricsPage"
+        >
+          <Captions :size="20" />
+        </button>
         <button
           class="icon-btn"
           type="button"
@@ -297,6 +336,11 @@ function playAt(index: number) {
               />
             </span>
           </div>
+
+          <button class="lyrics-entry" type="button" @click="showLyricsPage">
+            <Captions :size="15" />
+            查看歌词
+          </button>
         </div>
       </section>
 
@@ -345,11 +389,32 @@ function playAt(index: number) {
               :key="`${line.timeMs}-${index}`"
               :data-line="index"
               class="lyric-line"
-              :class="{ active: index === activeLyricIndex }"
+              :class="{
+                active: index === activeLyricIndex,
+                'has-words': index === activeLyricIndex && line.words.length > 0,
+              }"
             >
-              <div class="lyric-text">{{ line.text }}</div>
+              <div class="lyric-text">
+                <template v-if="index === activeLyricIndex && line.words.length">
+                  <span
+                    v-for="(word, wordIndex) in line.words"
+                    :key="wordIndex"
+                    class="lyric-word"
+                    :class="{
+                      sung: player.positionMs >= word.timeMs,
+                      current:
+                        player.positionMs >= word.timeMs &&
+                        player.positionMs < word.timeMs + word.durationMs,
+                    }"
+                  >{{ word.text }}</span>
+                </template>
+                <template v-else>{{ line.text }}</template>
+              </div>
               <div v-if="line.translation" class="lyric-translation">
                 {{ line.translation }}
+              </div>
+              <div v-else-if="showRomanization(line, index)" class="lyric-translation">
+                {{ line.romanization }}
               </div>
             </div>
           </div>
@@ -369,32 +434,6 @@ function playAt(index: number) {
           </div>
         </div>
       </section>
-    </div>
-
-    <div
-      v-if="player.current"
-      class="mobile-pager-dots"
-      role="tablist"
-      aria-label="播放页与歌词页"
-    >
-      <button
-        type="button"
-        role="tab"
-        :aria-selected="mobilePage === 'player'"
-        :class="{ active: mobilePage === 'player' }"
-        @click="showPlayerPage"
-      >
-        播放
-      </button>
-      <button
-        type="button"
-        role="tab"
-        :aria-selected="mobilePage === 'lyrics'"
-        :class="{ active: mobilePage === 'lyrics' }"
-        @click="showLyricsPage"
-      >
-        歌词
-      </button>
     </div>
 
     <CommentsPanel
