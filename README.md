@@ -286,7 +286,7 @@ docker compose -f docker-compose.web.yml up -d --build
 更新方法：
 ```bash 
   cd /path/to/Melos          # 你服务器上仓库所在目录
-  git pull origin main       # 更新到 8466984（切歌修复）
+  git pull origin main       # 更新文件
   docker compose -f docker-compose.web.yml up -d --build
 ```
 ---
