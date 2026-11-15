@@ -269,6 +269,10 @@ docker compose -f docker-compose.web.yml up -d --build
 > 上游 0.4.16 会缓存首次加载的音源树，导致歌单内切歌后封面/歌词变了、
 > 声音却仍是同一首；补丁已通过 `dependency_overrides` 接入，重新构建时
 > `flutter pub get` 会自动使用。
+>
+> iPhone/iPad 会自动启用轻量渲染：渲染倍率上限 2x、关闭实时背景模糊与
+> 封面旋转、歌词刷新约 30fps；输入框字号固定为 16px，避免 iOS 聚焦时
+> 自动放大页面。桌面浏览器保持完整的液态玻璃视觉效果。
 
 修改 Dart 代码后重新生成前端：
 

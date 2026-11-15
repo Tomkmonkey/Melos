@@ -2,6 +2,7 @@ import 'dart:ui';
 import 'package:flutter/material.dart';
 import '../design_tokens.dart';
 import '../../controllers/theme_controller.dart';
+import '../../core/web_performance.dart';
 
 /// 全局流体极光氛围底层背景（iOS 26 Ambient Mesh Background）。
 /// 采用全屏平滑弥散光晕，消除任何高度截断与局部断层。
@@ -180,7 +181,9 @@ class _LiquidGlassCardState extends State<LiquidGlassCard> {
     }
 
     final isLiquidGlass = ThemeController.instance.liquidGlassEnabled;
-    final hasBlur = isLiquidGlass && widget.blurSigma > 0;
+    // iOS Web/PWA 上实时 BackdropFilter 代价很高，降级为半透明卡片。
+    final hasBlur =
+        isLiquidGlass && widget.blurSigma > 0 && !WebPerformance.lowPower;
     final cardDecoration = BoxDecoration(
       color: effectiveBgColor,
       borderRadius: BorderRadius.circular(widget.borderRadius),
@@ -307,7 +310,8 @@ class _LiquidGlassCapsuleState extends State<LiquidGlassCapsule> {
     }
 
     final isLiquidGlass = ThemeController.instance.liquidGlassEnabled;
-    final hasBlur = isLiquidGlass && widget.blurSigma > 0;
+    final hasBlur =
+        isLiquidGlass && widget.blurSigma > 0 && !WebPerformance.lowPower;
     final capsuleDecoration = BoxDecoration(
       color: effectiveBgColor,
       borderRadius: BorderRadius.circular(100),
@@ -443,6 +447,29 @@ class LiquidGlassSheetContainer extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
+    // 移动端 Web 不做全屏实时模糊，改用更不透明的纯色面板。
+    final lowPower = WebPerformance.lowPower;
+
+    final panel = DecoratedBox(
+      decoration: BoxDecoration(
+        color: isDark
+            ? const Color(0xFF141822).withValues(alpha: lowPower ? .97 : .85)
+            : Colors.white.withValues(alpha: lowPower ? .98 : .88),
+        borderRadius: BorderRadius.vertical(
+          top: Radius.circular(borderRadius),
+        ),
+        border: Border.all(
+          color: isDark
+              ? Colors.white.withValues(alpha: .18)
+              : Colors.white.withValues(alpha: .95),
+          width: 1.2,
+        ),
+      ),
+      child: Padding(
+        padding: padding ?? const EdgeInsets.all(AppSpacing.lg),
+        child: child,
+      ),
+    );
 
     return Container(
       constraints: constraints,
@@ -464,29 +491,12 @@ class LiquidGlassSheetContainer extends StatelessWidget {
         borderRadius: BorderRadius.vertical(
           top: Radius.circular(borderRadius),
         ),
-        child: BackdropFilter(
-          filter: ImageFilter.blur(sigmaX: 20, sigmaY: 20),
-          child: DecoratedBox(
-            decoration: BoxDecoration(
-              color: isDark
-                  ? const Color(0xFF141822).withValues(alpha: .85)
-                  : Colors.white.withValues(alpha: .88),
-              borderRadius: BorderRadius.vertical(
-                top: Radius.circular(borderRadius),
+        child: lowPower
+            ? panel
+            : BackdropFilter(
+                filter: ImageFilter.blur(sigmaX: 20, sigmaY: 20),
+                child: panel,
               ),
-              border: Border.all(
-                color: isDark
-                    ? Colors.white.withValues(alpha: .18)
-                    : Colors.white.withValues(alpha: .95),
-                width: 1.2,
-              ),
-            ),
-            child: Padding(
-              padding: padding ?? const EdgeInsets.all(AppSpacing.lg),
-              child: child,
-            ),
-          ),
-        ),
       ),
     );
   }

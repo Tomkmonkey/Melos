@@ -34,6 +34,42 @@
 
   <title>Melos · KA Music</title>
   <link rel="manifest" href="manifest.json">
+
+  <style>
+    /* iOS Safari 聚焦字号小于 16px 的输入框时会自动放大页面，而 Flutter
+       的手势层会拦截双指缩小，导致放大后无法恢复。把引擎的隐藏输入框
+       字号统一提到 16px，即可避免聚焦自动缩放（画布内文字大小不受影响）。 */
+    flt-text-editing-host input,
+    flt-text-editing-host textarea,
+    flt-text-editing-host [contenteditable="true"],
+    flt-semantics-host input,
+    flt-semantics-host textarea,
+    .flt-text-editing {
+      font-size: 16px !important;
+    }
+  </style>
+
+  <script>
+    // iPhone/iPad 的 DPR 通常为 3，Flutter Web（CanvasKit）按物理像素渲染
+    // 整块画布。PWA 中叠加实时模糊与动画时 GPU 压力很大，容易卡顿、发热。
+    // 把渲染倍率限制到 2 倍：布局尺寸不变，像素量约减少 55%。
+    (function () {
+      var ua = navigator.userAgent || '';
+      var isIOS = /iPhone|iPad|iPod/i.test(ua) ||
+          (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+      if (!isIOS) return;
+      try {
+        var cap = 2;
+        if ((window.devicePixelRatio || 1) <= cap) return;
+        Object.defineProperty(window, 'devicePixelRatio', {
+          configurable: true,
+          get: function () { return cap; }
+        });
+      } catch (e) {
+        // 无法覆盖时保持浏览器默认值。
+      }
+    })();
+  </script>
 </head>
 <body>
   <!--

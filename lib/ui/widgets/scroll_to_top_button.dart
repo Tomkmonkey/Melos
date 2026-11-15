@@ -1,7 +1,7 @@
-import 'dart:ui';
-
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+
+import 'adaptive_blur.dart';
 
 /// 全局通用的液态玻璃快速返回顶部按钮。
 ///
@@ -145,8 +145,8 @@ class _ScrollToTopButtonState extends State<ScrollToTopButton> {
                   ],
                 ),
                 child: ClipOval(
-                  child: BackdropFilter(
-                    filter: ImageFilter.blur(sigmaX: 12, sigmaY: 12),
+                  child: AdaptiveBackdropBlur(
+                    sigma: 12,
                     child: DecoratedBox(
                       decoration: BoxDecoration(
                         shape: BoxShape.circle,

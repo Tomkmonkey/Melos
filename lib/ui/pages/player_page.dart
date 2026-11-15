@@ -17,6 +17,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../../controllers/auth_controller.dart';
 import '../../controllers/player_controller.dart';
 import '../../controllers/theme_controller.dart';
+import '../../core/web_performance.dart';
 import '../../models/music_models.dart';
 import '../../services/cover_service.dart';
 import '../../services/lyric_converter.dart';
@@ -472,7 +473,8 @@ class _ArtworkBackgroundState extends State<_ArtworkBackground> {
             const _FallbackBackground(),
             if (coverUrl != null)
               ClipRect(
-                child: ThemeController.instance.liquidGlassEnabled
+                child: ThemeController.instance.liquidGlassEnabled &&
+                        !WebPerformance.lowPower
                     ? ImageFiltered(
                         imageFilter: ImageFilter.blur(
                           sigmaX: 18,
@@ -858,7 +860,7 @@ class _LandscapeArtworkShowcaseState extends State<_LandscapeArtworkShowcase>
   }
 
   void _syncRotation() {
-    if (widget.player.isPlaying) {
+    if (widget.player.isPlaying && !WebPerformance.lowPower) {
       if (!_rotationController.isAnimating) {
         _rotationController.repeat();
       }
@@ -1036,6 +1038,7 @@ class _LandscapeLyricPanelState extends State<_LandscapeLyricPanel> {
   late final LyricController _lyricController;
   late final Ticker _ticker;
   bool _isUserSelecting = false;
+  Duration _lastLyricTick = Duration.zero;
   /// 已加载歌词的快照：用于区分"歌词为空但准备中"与"歌词为空且加载完成"。
   List<LyricLine> _loadedLyrics = const [];
   /// 上次的准备状态快照：isPreparing 变化时也要刷新（"正在准备音乐..."->"暂无歌词"）。
@@ -1172,6 +1175,7 @@ class _LandscapeLyricPanelState extends State<_LandscapeLyricPanel> {
         !widget.player.isScrubbing &&
         !_isUserSelecting;
     if (shouldTick && !_ticker.isActive) {
+      _lastLyricTick = Duration.zero;
       _ticker.start();
     } else if (!shouldTick && _ticker.isActive) {
       _ticker.stop();
@@ -1182,6 +1186,12 @@ class _LandscapeLyricPanelState extends State<_LandscapeLyricPanel> {
     if (!mounted || widget.player.isScrubbing) {
       return;
     }
+    // iOS Web/PWA 上逐帧重绘歌词开销高，降到约 30fps。
+    if (WebPerformance.lowPower &&
+        elapsed - _lastLyricTick < const Duration(milliseconds: 33)) {
+      return;
+    }
+    _lastLyricTick = elapsed;
     _lyricController.setProgress(widget.player.smoothPosition);
   }
 
@@ -2295,6 +2305,7 @@ class _LyricViewportState extends State<_LyricViewport> {
   late final LyricController _lyricController;
   late final Ticker _ticker;
   bool _isUserSelecting = false;
+  Duration _lastLyricTick = Duration.zero;
 
   @override
   void initState() {
@@ -2362,6 +2373,7 @@ class _LyricViewportState extends State<_LyricViewport> {
         !widget.player.isScrubbing &&
         !_isUserSelecting;
     if (shouldTick && !_ticker.isActive) {
+      _lastLyricTick = Duration.zero;
       _ticker.start();
     } else if (!shouldTick && _ticker.isActive) {
       _ticker.stop();
@@ -2372,6 +2384,12 @@ class _LyricViewportState extends State<_LyricViewport> {
     if (!mounted || widget.player.isScrubbing) {
       return;
     }
+    // iOS Web/PWA 上逐帧重绘歌词开销高，降到约 30fps。
+    if (WebPerformance.lowPower &&
+        elapsed - _lastLyricTick < const Duration(milliseconds: 33)) {
+      return;
+    }
+    _lastLyricTick = elapsed;
     _lyricController.setProgress(widget.player.smoothPosition);
   }
 
@@ -2436,7 +2454,9 @@ class _LyricViewportState extends State<_LyricViewport> {
       scrollCurve: const Cubic(0.16, 1.0, 0.3, 1.0),
     );
 
-    final blurEnabled = widget.player.lyricBlurEnabled;
+    // iOS Web/PWA 上逐行高斯模糊开销过高，自动降级为清晰歌词。
+    final blurEnabled =
+        widget.player.lyricBlurEnabled && !WebPerformance.lowPower;
     final maxBlurSigma = blurEnabled ? _lyricBlurSigma : 0.0;
     final blurStep = blurEnabled ? _lyricBlurStep : 0.0;
 

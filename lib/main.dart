@@ -15,6 +15,7 @@ import 'controllers/player_controller.dart';
 import 'controllers/local_music_controller.dart';
 import 'controllers/theme_controller.dart';
 import 'core/api_client.dart';
+import 'core/web_performance.dart';
 import 'services/cache_service.dart';
 import 'services/deep_link_service.dart';
 import 'services/device_info_service.dart';
@@ -30,6 +31,9 @@ import 'ui/widgets/toast.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  if (kIsWeb) {
+    debugPrint('[KA Music][web] lowPower=${WebPerformance.lowPower}');
+  }
   // Linux desktop (Docker) 没有官方 just_audio 实现，使用 media_kit/libmpv。
   if (!kIsWeb && Platform.isLinux) {
     JustAudioMediaKit.ensureInitialized(

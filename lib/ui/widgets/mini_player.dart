@@ -1,12 +1,12 @@
-import 'dart:ui';
-
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
 import '../../controllers/auth_controller.dart';
 import '../../controllers/player_controller.dart';
 import '../../controllers/theme_controller.dart';
+import '../../core/web_performance.dart';
 import '../pages/player_page.dart';
+import 'adaptive_blur.dart';
 import 'favorite_button.dart';
 import 'song_artwork.dart';
 
@@ -64,7 +64,9 @@ class _MiniPlayerState extends State<MiniPlayer>
   }
 
   void _syncRotation() {
-    if (widget.player.isPlaying && !_appInBackground) {
+    if (widget.player.isPlaying &&
+        !_appInBackground &&
+        !WebPerformance.lowPower) {
       if (!_rotationController.isAnimating) {
         _rotationController.repeat();
       }
@@ -151,8 +153,8 @@ class _MiniPlayerState extends State<MiniPlayer>
                 ],
               ),
               child: ClipOval(
-                child: BackdropFilter(
-                  filter: ImageFilter.blur(sigmaX: 28, sigmaY: 28),
+                child: AdaptiveBackdropBlur(
+                  sigma: 28,
                   child: DecoratedBox(
                     decoration: BoxDecoration(
                       shape: BoxShape.circle,

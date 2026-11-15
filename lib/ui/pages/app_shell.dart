@@ -8,6 +8,7 @@ import '../../controllers/download_controller.dart';
 import '../../controllers/player_controller.dart';
 import '../../controllers/theme_controller.dart';
 import '../../controllers/local_music_controller.dart';
+import '../../core/web_performance.dart';
 import '../../services/cache_service.dart';
 import '../../services/music_api.dart';
 import '../widgets/liquid_glass_ui.dart';
@@ -780,7 +781,9 @@ class _LiquidGlassBottomBar extends StatelessWidget {
             borderRadius: BorderRadius.circular(100),
             child: Builder(
               builder: (context) {
-                final isLiquid = ThemeController.instance.liquidGlassEnabled;
+                final isLiquid =
+                    ThemeController.instance.liquidGlassEnabled &&
+                        !WebPerformance.lowPower;
                 final body = DecoratedBox(
                   decoration: BoxDecoration(
                     borderRadius: BorderRadius.circular(100),
@@ -903,7 +906,11 @@ class _CenterPlayerDiscState extends State<_CenterPlayerDisc>
   }
 
   void _syncRotation() {
-    if (widget.player.isPlaying && !_appInBackground) {
+    // 移动端 Web 上持续旋转会让 Flutter 每帧重绘底栏（叠加模糊时更重），
+    // 冻结封面旋转以显著降低 GPU/电量消耗。
+    if (widget.player.isPlaying &&
+        !_appInBackground &&
+        !WebPerformance.lowPower) {
       if (!_rotationController.isAnimating) {
         _rotationController.repeat();
       }
