@@ -120,8 +120,8 @@ MELOS_WEB_PORT=8080 docker compose -f docker-compose.web.yml up -d --build
 
 ## ✨ 功能亮点（Vue 重构版）
 
-> dev 分支的 Web 端已迁移到 Vue 3，覆盖核心听歌流程；更完整的 Flutter 功能
-> （歌单导入、下载、FM、统计等）仍在 Flutter 源码中，后续逐步迁移。
+> Web 端已迁移到 Vue 3，覆盖核心听歌流程；更完整的 Flutter 功能
+> （歌单导入、下载、FM、统计等）仍保留在 Flutter 桌面版源码中，后续逐步迁移。
 
 ### 🎵 播放
 
@@ -381,7 +381,7 @@ Dockerfile / docker-compose.yml   # 可选 Linux 桌面版
 更新到最新版本，并确认 **api 镜像也重新构建**：
 
 ```bash
-git pull origin dev
+git pull
 docker compose -f docker-compose.web.yml up -d --build
 ```
 
@@ -407,8 +407,8 @@ VIP / 版权受限歌曲可能不返回播放地址；也可能是网络或音�
 登录态并自动迁移；如果浏览器数据已被清除，扫码一次即可。
 
 **Vue 版为什么比 Flutter 版少了些功能？**
-dev 分支优先完成 Web 核心听歌体验（播放、歌词、评论、歌单）；歌单导入、
-收藏/云盘/专辑/FM、设置、统计等功能仍在 Flutter 版，后续逐步迁移。
+当前 Web 端优先完成核心听歌体验（播放、歌词、评论、歌单）；歌单导入、
+收藏/云盘/专辑/FM、设置、统计等功能仍保留在 Flutter 桌面版，后续逐步迁移。
 功能清单见 [vue/README.md](vue/README.md)。
 
 ---
@@ -432,17 +432,26 @@ docker compose -f docker-compose.web.yml up -d --build
 
 ## 📝 更新日志
 
-Flutter 应用功能更新见 [update.md](update.md)（当前 Flutter 版本 3.3.0）；
-Vue 前端在默认 `dev` 分支迭代。
+- Vue Web 版：[vue/CHANGELOG.md](vue/CHANGELOG.md)
+- Flutter / Android 历史更新：[update.md](update.md)
 
-Melos 部署层近期更新：
+### Vue Web 近期更新
 
-- **Web 前端重构为 Vue 3 + Vite**（dev 分支）：响应式布局、HTML5 Audio、
-  歌词与评论、PWA、Flutter 登录态迁移
-- 新增 Web PWA 部署：Nginx + Node 网关 + 同源 API/音频代理
-- 修复 Web 歌单切歌后仍播放同一首（内置 `just_audio_web` 补丁）
-- 修复 Web 评论区无法加载（新增 `/api/comment-proxy`）
-- 修复扫码登录约 2 分钟延迟（登录接口绕过 API 缓存）
+- 从 Flutter Web 重构为 **Vue 3 + Vite + TypeScript + Pinia**
+- **纯白极简 UI**，使用新的 M 音符图标与白色 PWA 主题
+- 响应式布局：桌面侧栏 / 手机底部导航
+- 播放页：桌面歌词在封面右侧；手机左右滑动切换封面 / 歌词页
+- HTML5 Audio、队列与进度持久化、Media Session
+- LRC 歌词、评论（热门/最新/回复/配图）
+- 扫码登录 + Flutter 版登录态自动迁移
+- 新增 `Dockerfile.web.vue`、`prebuilt/vue` 与 `docker/build-vue.sh`
+
+### 早期 Flutter Web / 部署层更新
+
+- Web PWA 部署：Nginx + Node 网关 + 同源 API/音频代理
+- 修复 Web 歌单切歌后仍播放同一首（`third_party/just_audio_web`）
+- 修复 Web 评论区无法加载（`/api/comment-proxy`）
+- 修复扫码登录约 2 分钟延迟
 - iPhone 输入框聚焦放大与 PWA 卡顿/发热优化
 
 ---

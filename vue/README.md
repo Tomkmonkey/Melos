@@ -1,6 +1,6 @@
-# Melos Vue 前端（dev 分支）
+# Melos Vue 前端
 
-Melos 的 Web 前端正在从 Flutter Web 重构为 **Vue 3 + Vite + TypeScript**。
+Melos 的 Web 前端，基于 **Vue 3 + Vite + TypeScript**。
 后端（会话网关 + KuGouMusicApi）与 `/api` 同源代理保持不变。
 
 ## 技术栈
@@ -11,6 +11,8 @@ Melos 的 Web 前端正在从 Flutter Web 重构为 **Vue 3 + Vite + TypeScript*
 - Vue Router
 - 原生 HTML5 Audio（不使用 CanvasKit）
 - 纯白极简 UI：白底、浅灰层次、细边框、黑白按钮；无渐变 / 玻璃拟态 / 装饰光效
+
+更新记录见 [CHANGELOG.md](CHANGELOG.md)。
 
 ## 已实现
 

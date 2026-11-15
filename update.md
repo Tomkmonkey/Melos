@@ -1,3 +1,6 @@
+> 本文件记录 Flutter / Android 版本历史。Vue Web 版更新见
+> [vue/CHANGELOG.md](vue/CHANGELOG.md)。
+
 # 安卓端KA-Music更新日志
 
 ## v3.3.0
