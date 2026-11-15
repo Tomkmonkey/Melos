@@ -376,6 +376,128 @@ function streamAudioProxy(req, res, url) {
   fetchOnce(target, 0);
 }
 
+// 评论接口只支持 http 且不返回 CORS 头，Web PWA 直接请求会被混合内容/跨域
+// 策略拦截；这里只代理酷狗评论域名，避免成为任意 URL 代理。
+const COMMENT_HOSTS = new Set([
+  'm.comment.service.kugou.com',
+  'comment.service.kugou.com',
+]);
+const COMMENT_USER_AGENTS = {
+  web:
+    'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) ' +
+    'Chrome/107.0.0.0 Safari/537.36 Edg/107.0.1418.24',
+  // 楼层回复接口对客户端 UA 有校验，需要保留 App 端的评论 UA。
+  comment: 'Android712-AndroidPhone-8983-18-0-COMMENT-wifi',
+};
+
+function isAllowedCommentUrl(target) {
+  return (
+    /^https?:$/.test(target.protocol) &&
+    !target.username &&
+    !target.password &&
+    COMMENT_HOSTS.has(target.hostname.toLowerCase())
+  );
+}
+
+/**
+ * 同源评论代理：把酷狗评论接口转发到同源，解决 Web 端 CORS / 混合内容问题。
+ * ua=comment 时使用评论客户端 UA（楼层回复接口需要），默认使用网页 UA。
+ */
+function streamCommentProxy(req, res, url) {
+  if (req.method !== 'GET' && req.method !== 'HEAD') {
+    sendJson(res, 405, { status: 0, error: 'method_not_allowed' });
+    return;
+  }
+  const raw = url.searchParams.get('url') || '';
+  let target;
+  try {
+    target = new URL(raw);
+  } catch (_) {
+    sendJson(res, 400, { status: 0, error: 'invalid_comment_url' });
+    return;
+  }
+
+  const userAgent =
+    url.searchParams.get('ua') === 'comment'
+      ? COMMENT_USER_AGENTS.comment
+      : COMMENT_USER_AGENTS.web;
+
+  const fetchOnce = (targetUrl, redirects) => {
+    if (!isAllowedCommentUrl(targetUrl)) {
+      sendJson(res, 400, {
+        status: 0,
+        error: 'comment_url_not_allowed',
+        message: '仅允许代理酷狗评论域名',
+      });
+      return;
+    }
+    if (redirects > 3) {
+      sendJson(res, 502, { status: 0, error: 'comment_too_many_redirects' });
+      return;
+    }
+    const transport = targetUrl.protocol === 'https:' ? https : http;
+    const upstream = transport.request(
+      {
+        protocol: targetUrl.protocol,
+        hostname: targetUrl.hostname,
+        port: targetUrl.port || undefined,
+        path: `${targetUrl.pathname}${targetUrl.search}`,
+        method: req.method === 'HEAD' ? 'HEAD' : 'GET',
+        headers: {
+          'user-agent': userAgent,
+          accept: 'application/json, text/plain, */*',
+        },
+      },
+      (upstreamRes) => {
+        const status = upstreamRes.statusCode || 502;
+        if ([301, 302, 303, 307, 308].includes(status) && upstreamRes.headers.location) {
+          upstreamRes.resume();
+          let next;
+          try {
+            next = new URL(upstreamRes.headers.location, targetUrl);
+          } catch (_) {
+            sendJson(res, 502, { status: 0, error: 'bad_comment_redirect' });
+            return;
+          }
+          fetchOnce(next, redirects + 1);
+          return;
+        }
+        const out = {
+          'content-type':
+            upstreamRes.headers['content-type'] || 'application/json; charset=utf-8',
+          'cache-control': 'no-store',
+        };
+        if (upstreamRes.headers['content-length'] !== undefined) {
+          out['content-length'] = upstreamRes.headers['content-length'];
+        }
+        res.writeHead(status, out);
+        if (req.method === 'HEAD') {
+          upstreamRes.resume();
+          res.end();
+          return;
+        }
+        upstreamRes.pipe(res);
+      },
+    );
+    upstream.on('error', (error) => {
+      if (!res.headersSent) {
+        sendJson(res, 502, {
+          status: 0,
+          error: 'comment_upstream_failed',
+          message: error.message,
+        });
+      } else {
+        res.destroy();
+      }
+    });
+    upstream.setTimeout(20000, () => upstream.destroy(new Error('comment upstream timeout')));
+    req.on('close', () => upstream.destroy());
+    upstream.end();
+  };
+
+  fetchOnce(target, 0);
+}
+
 // ---------------------------------------------------------------------------
 // 对外接口适配
 // ---------------------------------------------------------------------------
@@ -755,6 +877,12 @@ async function handle(req, res) {
       downloadUrl: '',
       forceUpdate: false,
     });
+    return;
+  }
+
+  // 评论同源代理：评论接口不带 CORS 头且只支持 http，Web 端直连会被拦截。
+  if (pathname === '/comment-proxy') {
+    streamCommentProxy(req, res, url);
     return;
   }
 

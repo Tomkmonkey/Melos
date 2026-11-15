@@ -263,7 +263,9 @@ docker compose -f docker-compose.web.yml up -d --build
 2. 登录态保存在 `melos-web-data` 数据卷 + 浏览器 localStorage。
 3. 支持 PWA 安装；公网部署需要 HTTPS（localhost 除外）。
 4. 音频通过同源 `/api/audio-proxy` 转发，支持拖动进度，避免 HTTPS 混合内容。
-5. Web 端已隐藏本地音乐、下载、桌面歌词等平台功能。
+5. 评论、头像与配图通过同源 `/api/comment-proxy`、`/api/audio-proxy` 转发，
+   避免浏览器 CORS 与混合内容限制。
+6. Web 端已隐藏本地音乐、下载、桌面歌词等平台功能。
 
 > 网页端切歌依赖内置的 `third_party/just_audio_web`（0.4.17 本地补丁）。
 > 上游 0.4.16 会缓存首次加载的音源树，导致歌单内切歌后封面/歌词变了、

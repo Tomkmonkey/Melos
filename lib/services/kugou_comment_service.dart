@@ -2,8 +2,10 @@ import 'dart:async';
 import 'dart:convert';
 
 import 'package:crypto/crypto.dart';
+import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 
+import '../config/app_config.dart';
 import '../models/music_models.dart';
 import 'comment_models.dart';
 
@@ -90,7 +92,7 @@ class KugouCommentService implements MusicCommentService {
       '&kugouid=687373022&need_show_image=1&appid=1001'
       '&childrenid=$childrenId&tid=${comment.id}',
     );
-    final json = await _getJson(uri, _commentUserAgent);
+    final json = await _getJson(uri, _commentUserAgent, commentClient: true);
 
     final errCode = _asInt(json['err_code']);
     if (errCode != null && errCode != 0) {
@@ -122,11 +124,44 @@ class KugouCommentService implements MusicCommentService {
     return md5.convert(utf8.encode(raw)).toString();
   }
 
-  Future<Map<String, dynamic>> _getJson(Uri uri, String userAgent) async {
+  /// Web 端通过同源网关转发评论请求：酷狗评论接口不带 CORS 头且只支持 http，
+  /// 浏览器直连会被跨域/混合内容策略拦截。桌面端保持直连。
+  Uri _proxiedUri(Uri uri, {required bool commentClient}) {
+    if (!kIsWeb) return uri;
+    final proxyUri = AppConfig.apiUri('/comment-proxy', {
+      'url': uri.toString(),
+      if (commentClient) 'ua': 'comment',
+    });
+    return proxyUri.hasScheme ? proxyUri : Uri.base.resolveUri(proxyUri);
+  }
+
+  /// 评论头像/配图多为 http 地址，HTTPS 页面会按混合内容拦截；
+  /// 酷狗图片域名走同源音频代理（支持 http 且允许 kgimg/kugou 域名）。
+  String? _proxiedImage(String? url) {
+    if (!kIsWeb || url == null || url.isEmpty) return url;
+    final parsed = Uri.tryParse(url);
+    if (parsed == null || parsed.scheme != 'http' || parsed.host.isEmpty) {
+      return url;
+    }
+    final host = parsed.host.toLowerCase();
+    if (!host.endsWith('.kugou.com') && !host.endsWith('.kgimg.com')) {
+      return url;
+    }
+    final proxyUri = AppConfig.apiUri('/audio-proxy', {'url': url});
+    return (proxyUri.hasScheme ? proxyUri : Uri.base.resolveUri(proxyUri))
+        .toString();
+  }
+
+  Future<Map<String, dynamic>> _getJson(
+    Uri uri,
+    String userAgent, {
+    bool commentClient = false,
+  }) async {
+    final requestUri = _proxiedUri(uri, commentClient: commentClient);
     http.Response response;
     try {
       response = await _client
-          .get(uri, headers: {'User-Agent': userAgent})
+          .get(requestUri, headers: {'User-Agent': userAgent})
           .timeout(_timeout);
     } on TimeoutException {
       throw CommentException('请求超时，请稍后重试');
@@ -165,13 +200,15 @@ class KugouCommentService implements MusicCommentService {
       id: _asString(json['id']) ?? '',
       content: _decodeContent(json),
       userName: _asString(json['user_name']),
-      avatar: _asString(json['user_pic']),
+      avatar: _proxiedImage(_asString(json['user_pic'])),
       likedCount: _likeCount(json['like']),
       replyCount: _asInt(json['reply_num']) ?? _asInt(json['comments_num']),
       time: _asString(json['addtime']),
       location: _locationOf(json),
       levelLabel: _levelOf(json['uinfo']),
-      images: _parseImages(json['images']),
+      images: _parseImages(json['images'])
+          .map((url) => _proxiedImage(url) ?? url)
+          .toList(growable: false),
       childrenId: _asString(json['special_child_id']),
       firstReply: withReply && replies.isNotEmpty
           ? _parseComment(replies.first, withReply: false)
