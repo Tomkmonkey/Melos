@@ -14,7 +14,7 @@ cd vue && npm ci && npm run build
 - 修改 `vue/` 代码后必须重新生成，否则 Web 镜像不会更新
 - 产物包含 PWA manifest、Service Worker 与图标
 
-## web/ —— Flutter Web 静态文件（main 分支 / 回退用）
+## web/ —— Flutter Web 静态文件（历史版本 / 回退用）
 
 ```bash
 flutter build web --release \
@@ -23,8 +23,7 @@ flutter build web --release \
 
 - `Dockerfile.web` 直接复制该目录，部署时无需 Flutter SDK
 - 由 `./docker/build-web.sh` 重新生成
-- `dev` 分支的 `docker-compose.web.yml` 已改用 Vue，Flutter Web 保留用于
-  `main` 分支或回退
+- `docker-compose.web.yml` 已改用 Vue，Flutter Web 保留用于历史版本或回退
 
 ## linux-x64/ —— Linux 桌面版
 

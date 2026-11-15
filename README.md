@@ -39,9 +39,9 @@ Web 端基于 [KA Music](https://github.com/umr-xiaomai/kgka_Music_hl) 的功能
 播放、管理歌单、看歌词和评论；在 iPhone / Android 上「添加到主屏幕」后，
 它就像一个原生音乐 App 一样运行。
 
-> **dev 分支说明**：Web 前端已重构为 **Vue 3 + Vite + TypeScript**（源码在 `vue/`），
-> `docker-compose.web.yml` 默认构建 Vue 版本，产物为 `prebuilt/vue`。
-> 可选的 Linux 桌面版仍使用 Flutter；`main` 分支保留 Flutter Web 版本。
+> **分支说明**：默认分支 `dev` 即 Vue 3 + Vite + TypeScript 版本（源码在 `vue/`），
+> `docker-compose.web.yml` 构建 Vue 产物 `prebuilt/vue`。原 `main` 分支已合并到
+> `dev` 并移除；Flutter Web 与 Linux 桌面版源码仍保留在仓库历史中，可按需回退。
 
 ### 为什么是 Melos
 
@@ -76,8 +76,7 @@ Web 端基于 [KA Music](https://github.com/umr-xiaomai/kgka_Music_hl) 的功能
 ### 1. 启动
 
 ```bash
-# Vue 重构版在 dev 分支
-git clone -b dev https://github.com/Tomkmonkey/Melos.git
+git clone https://github.com/Tomkmonkey/Melos.git
 cd Melos
 docker compose -f docker-compose.web.yml up -d --build
 ```
@@ -122,7 +121,7 @@ MELOS_WEB_PORT=8080 docker compose -f docker-compose.web.yml up -d --build
 ## ✨ 功能亮点（Vue 重构版）
 
 > dev 分支的 Web 端已迁移到 Vue 3，覆盖核心听歌流程；更完整的 Flutter 功能
-> （歌单导入、下载、FM、统计等）仍在 `main` 分支，后续逐步迁移。
+> （歌单导入、下载、FM、统计等）仍在 Flutter 源码中，后续逐步迁移。
 
 ### 🎵 播放
 
@@ -176,7 +175,7 @@ MELOS_WEB_PORT=8080 docker compose -f docker-compose.web.yml up -d --build
 |:----------:|:--------:|
 | ![手机播放](screenshots/vue-player-mobile.png) | ![评论](screenshots/vue-comments.png) |
 
-> Flutter 版界面截图仍保留在 `screenshots/home.jpg` 等文件中，可在 `main` 分支查看。
+> Flutter 版界面截图仍保留在 `screenshots/home.jpg` 等文件中，可在仓库历史中查看。
 
 ---
 
@@ -242,8 +241,8 @@ MELOS_WEB_PORT=8080 docker compose -f docker-compose.web.yml up -d --build
 - **移动端细节**：输入框固定 16px，避免 iOS 聚焦放大；不使用实时背景模糊与
   无限动画，听歌时页面可进入空闲状态。
 
-> Flutter 版的 CanvasKit 降级、跑马灯/骨架屏静态化等优化仍保留在 `main` 分支，
-> 供 Flutter Web 部署使用。
+> Flutter 版的 CanvasKit 降级、跑马灯/骨架屏静态化等优化仍保留在 Flutter
+> 源码中，供历史版本或桌面版使用。
 
 ---
 
@@ -272,7 +271,7 @@ docker compose up -d --build
 ### 环境
 
 - **Vue Web**：Node.js 20+ / npm
-- **Flutter 桌面版 / main 分支**：Flutter 3.50+（Dart 3.14+）
+- **Flutter 桌面版 / 历史源码**：Flutter 3.50+（Dart 3.14+）
 - 可选：Docker 24+ / Compose v2（构建镜像时）
 
 ### Vue 前端开发
@@ -316,7 +315,7 @@ docker compose -f docker-compose.web.yml up -d --build
 如果需要在 Docker 内从源码编译：
 
 - Vue：直接修改 `Dockerfile.web.vue` / 使用 `prebuilt/vue`
-- Flutter Web（main 分支）：`Dockerfile.web.source`
+- Flutter Web（历史版本 / 回退）：`Dockerfile.web.source`
 - 桌面版：`Dockerfile.source`
 
 ### 环境变量
@@ -363,11 +362,11 @@ docker/
 ├── gateway/server.js        # 会话网关、音频/评论代理
 ├── build-vue.sh             # 重新生成 prebuilt/vue
 └── build-linux.sh           # 重新生成 prebuilt/linux-x64
-prebuilt/web/                # Flutter Web（main 分支 / 回退用）
-Dockerfile.web               # Flutter Web 镜像（main 分支）
+prebuilt/web/                # Flutter Web（历史版本 / 回退用）
+Dockerfile.web               # Flutter Web 镜像（历史版本 / 回退）
 Dockerfile.web.source        # Flutter Web 源码构建（legacy）
 web/                         # Flutter PWA shell、manifest、图标
-lib/                         # Flutter 应用源码（桌面版 / main 分支）
+lib/                         # Flutter 应用源码（桌面版 / 历史版本）
 third_party/
 ├── KuGouMusicApi/           # 内嵌酷狗 API
 └── just_audio_web/          # Flutter Web 切歌修复补丁
@@ -418,11 +417,11 @@ dev 分支优先完成 Web 核心听歌体验（播放、歌词、评论、歌�
 
 ```bash
 cd Melos
-git pull origin dev
+git pull
 docker compose -f docker-compose.web.yml up -d --build
 ```
 
-- Vue 版在 `dev` 分支；`main` 分支仍是 Flutter 版，拉取时注意分支。
+- `dev` 是默认分支，Vue 版代码与预编译产物都在这里。
 - 必须带 `--build`：API 与前端都可能更新。
 - 数据卷不会删除，升级后无需重新扫码。
 - 桌面版更新：`docker compose up -d --build`。
@@ -432,7 +431,7 @@ docker compose -f docker-compose.web.yml up -d --build
 ## 📝 更新日志
 
 Flutter 应用功能更新见 [update.md](update.md)（当前 Flutter 版本 3.3.0）；
-Vue 前端随 `dev` 分支迭代。
+Vue 前端在默认 `dev` 分支迭代。
 
 Melos 部署层近期更新：
 
