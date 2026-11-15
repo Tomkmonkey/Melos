@@ -11,19 +11,19 @@
 </p>
 
 <p align="center">
-  <img src="https://img.shields.io/badge/Vue-3-42B883?logo=vue.js&logoColor=white" alt="Vue 3" />
-  <img src="https://img.shields.io/badge/Vite-8-646CFF?logo=vite&logoColor=white" alt="Vite" />
-  <img src="https://img.shields.io/badge/TypeScript-6-3178C6?logo=typescript&logoColor=white" alt="TypeScript" />
-  <img src="https://img.shields.io/badge/Docker-Compose-2496ED?logo=docker&logoColor=white" alt="Docker Compose" />
-  <img src="https://img.shields.io/badge/Web-PWA-4285F4?logo=google-chrome&logoColor=white" alt="Web PWA" />
-  <img src="https://img.shields.io/badge/Port-34962-5b7af0" alt="Port 34962" />
+  <img src="https://img.shields.io/badge/Vue_3-171717?style=flat-square" alt="Vue 3" />
+  <img src="https://img.shields.io/badge/Vite_8-404040?style=flat-square" alt="Vite" />
+  <img src="https://img.shields.io/badge/TypeScript_6-737373?style=flat-square" alt="TypeScript" />
+  <img src="https://img.shields.io/badge/Docker_Compose-171717?style=flat-square" alt="Docker Compose" />
+  <img src="https://img.shields.io/badge/Web_PWA-404040?style=flat-square" alt="Web PWA" />
+  <img src="https://img.shields.io/badge/Port_34962-737373?style=flat-square" alt="Port 34962" />
 </p>
 
 <p align="center">
-  <img src="https://img.shields.io/badge/Platform-Web%20PWA-4285F4" alt="Web PWA" />
-  <img src="https://img.shields.io/badge/Platform-iPhone%20%2F%20iPad-000000?logo=apple&logoColor=white" alt="iPhone / iPad" />
-  <img src="https://img.shields.io/badge/Platform-Android-3DDC84?logo=android&logoColor=white" alt="Android" />
-  <img src="https://img.shields.io/badge/Optional-Linux%20Desktop%20(Flutter)-FCC624?logo=linux&logoColor=black" alt="Optional Linux Desktop (Flutter)" />
+  <img src="https://img.shields.io/badge/Platform-Web_PWA-171717?style=flat-square" alt="Web PWA" />
+  <img src="https://img.shields.io/badge/Platform-iPhone_%2F_iPad-404040?style=flat-square" alt="iPhone / iPad" />
+  <img src="https://img.shields.io/badge/Platform-Android-404040?style=flat-square" alt="Android" />
+  <img src="https://img.shields.io/badge/Optional-Linux_Desktop_(Flutter)-737373?style=flat-square" alt="Optional Linux Desktop (Flutter)" />
 </p>
 
 ---
@@ -51,6 +51,8 @@ Web 端基于 [KA Music](https://github.com/umr-xiaomai/kgka_Music_hl) 的功能
   服务器构建只做镜像打包。
 - **Vue 3 重构版**：响应式布局、DOM 渲染，不再使用 CanvasKit 全屏画布；
   桌面侧栏 + 手机底部导航，天然适配各种屏幕。
+- **纯白极简 UI**：白色背景、浅灰分隔、细边框、黑白按钮，无渐变、
+  无玻璃拟态、无装饰光效，排版与留白优先。
 - **登录态持久化**：会话保存在 `melos-web-data` 数据卷；Vue 版还会自动迁移
   Flutter 版浏览器里的登录态，升级后无需重新扫码。
 - **同源代理**：音频、评论、头像都经由 `/api` 转发，避开 HTTPS 混合内容与 CORS。

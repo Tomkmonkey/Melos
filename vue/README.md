@@ -10,6 +10,7 @@ Melos 的 Web 前端正在从 Flutter Web 重构为 **Vue 3 + Vite + TypeScript*
 - Pinia（登录 / 播放器状态）
 - Vue Router
 - 原生 HTML5 Audio（不使用 CanvasKit）
+- 纯白极简 UI：白底、浅灰层次、细边框、黑白按钮；无渐变 / 玻璃拟态 / 装饰光效
 
 ## 已实现
 
