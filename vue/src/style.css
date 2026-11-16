@@ -1513,21 +1513,6 @@ input[type='range'] {
 }
 
 
-.lyrics-entry {
-  display: inline-flex;
-  align-items: center;
-  gap: var(--space-2);
-  align-self: center;
-  margin-top: var(--space-1);
-  padding: var(--space-1) var(--space-2);
-  color: var(--text-muted);
-  font-size: 12px;
-}
-
-.lyrics-entry:hover {
-  color: var(--text);
-}
-
 .mobile-lyrics-toggle {
   display: inline-flex;
 }
@@ -2640,10 +2625,6 @@ input[type='range'] {
     opacity: 1;
   }
 
-  .lyrics-entry {
-    display: inline-flex;
-  }
-
   .mobile-lyrics-toggle {
     display: inline-flex;
   }
@@ -2673,7 +2654,6 @@ input[type='range'] {
     padding-bottom: var(--space-8);
   }
 
-  .lyrics-entry,
   .mobile-lyrics-toggle {
     display: none;
   }

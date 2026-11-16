@@ -429,11 +429,6 @@ function playAt(index: number) {
               />
             </span>
           </div>
-
-          <button class="lyrics-entry" type="button" @click="showLyricsPage">
-            <Captions :size="15" />
-            查看歌词
-          </button>
         </div>
       </section>
 
