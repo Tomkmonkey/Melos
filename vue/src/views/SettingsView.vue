@@ -46,18 +46,50 @@ const avatarInitial = computed(() =>
   (auth.profile?.nickname ?? 'M').trim().slice(0, 1).toUpperCase(),
 )
 
-const todayKey = new Intl.DateTimeFormat('en-CA', {
-  timeZone: 'Asia/Shanghai',
-  year: 'numeric',
-  month: '2-digit',
-  day: '2-digit',
-}).format(new Date())
+// 酷狗会员接口返回的是北京时间（无时区后缀），按 UTC+8 解析后再转本地时间。
+function parseBeijingTime(value?: string): Date | null {
+  if (!value) return null
+  const match = /^(\d{4})-(\d{2})-(\d{2})[ T](\d{2}):(\d{2})(?::(\d{2}))?/.exec(value.trim())
+  if (!match) return null
+  return new Date(
+    Date.UTC(
+      Number(match[1]),
+      Number(match[2]) - 1,
+      Number(match[3]),
+      Number(match[4]) - 8,
+      Number(match[5]),
+      Number(match[6] ?? 0),
+    ),
+  )
+}
 
 const vipExpiryText = computed(() => {
-  const value = vip.expiry?.slice(0, 10)
-  if (!value) return '每日听歌与广告奖励'
-  if (value < todayKey) return '当前暂无生效中的概念 VIP'
-  return `VIP 有效期至 ${value}`
+  const date = parseBeijingTime(vip.expiry)
+  if (!date) return '每日听歌与广告奖励'
+  const active = date.getTime() > Date.now()
+  const beijing = new Intl.DateTimeFormat('zh-CN', {
+    timeZone: 'Asia/Shanghai',
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+    hour: '2-digit',
+    minute: '2-digit',
+    hour12: false,
+  }).format(date)
+  const localZone = Intl.DateTimeFormat().resolvedOptions().timeZone
+  const prefix = active ? 'VIP 有效期至' : '概念 VIP 已于'
+  const suffix = active ? '' : ' 到期'
+  if (localZone === 'Asia/Shanghai') return `${prefix} ${beijing}${suffix}`
+  const local = new Intl.DateTimeFormat('zh-CN', {
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+    hour: '2-digit',
+    minute: '2-digit',
+    hour12: false,
+    timeZoneName: 'short',
+  }).format(date)
+  return `${prefix} ${local}${suffix}（北京时间 ${beijing}）`
 })
 
 const vipStatusText = computed(() => {
@@ -155,9 +187,47 @@ onBeforeUnmount(() => {
       <div>
         <div class="eyebrow">Settings</div>
         <h1 class="page-title">设置</h1>
-        <p class="page-subtitle">播放、歌词、搜索与账号相关的常用选项</p>
+        <p class="page-subtitle">账号、播放、歌词与搜索相关的常用选项</p>
       </div>
     </header>
+
+    <section class="settings-section">
+      <div class="settings-section-head">
+        <h2 class="settings-section-title">账号</h2>
+      </div>
+      <div class="settings-card">
+        <div v-if="auth.loggedIn" class="setting-row">
+          <div class="settings-account">
+            <img
+              v-if="auth.profile?.avatar"
+              class="avatar"
+              :src="auth.profile.avatar"
+              alt=""
+              referrerpolicy="no-referrer"
+            />
+            <div v-else class="avatar-fallback">{{ avatarInitial }}</div>
+            <div>
+              <div class="setting-label">{{ auth.profile?.nickname ?? '已登录' }}</div>
+              <p class="setting-desc">酷狗概念版账号</p>
+            </div>
+          </div>
+          <button class="btn btn-sm btn-danger" type="button" @click="logout">
+            <LogOut :size="14" />
+            退出登录
+          </button>
+        </div>
+        <div v-else class="setting-row">
+          <div class="setting-copy">
+            <div class="setting-label">尚未登录</div>
+            <p class="setting-desc">扫码登录后可同步歌单与收藏。</p>
+          </div>
+          <RouterLink class="btn btn-primary btn-sm" to="/login">
+            <LogIn :size="14" />
+            扫码登录
+          </RouterLink>
+        </div>
+      </div>
+    </section>
 
     <section class="settings-section">
       <div class="settings-section-head">
@@ -368,44 +438,6 @@ onBeforeUnmount(() => {
             <p class="setting-desc">关闭过渡与动画，适合低性能设备。</p>
           </div>
           <ToggleSwitch v-model="settings.reduceMotion" label="减少动画" />
-        </div>
-      </div>
-    </section>
-
-    <section class="settings-section">
-      <div class="settings-section-head">
-        <h2 class="settings-section-title">账号</h2>
-      </div>
-      <div class="settings-card">
-        <div v-if="auth.loggedIn" class="setting-row">
-          <div class="settings-account">
-            <img
-              v-if="auth.profile?.avatar"
-              class="avatar"
-              :src="auth.profile.avatar"
-              alt=""
-              referrerpolicy="no-referrer"
-            />
-            <div v-else class="avatar-fallback">{{ avatarInitial }}</div>
-            <div>
-              <div class="setting-label">{{ auth.profile?.nickname ?? '已登录' }}</div>
-              <p class="setting-desc">酷狗概念版账号</p>
-            </div>
-          </div>
-          <button class="btn btn-sm btn-danger" type="button" @click="logout">
-            <LogOut :size="14" />
-            退出登录
-          </button>
-        </div>
-        <div v-else class="setting-row">
-          <div class="setting-copy">
-            <div class="setting-label">尚未登录</div>
-            <p class="setting-desc">扫码登录后可同步歌单与收藏。</p>
-          </div>
-          <RouterLink class="btn btn-primary btn-sm" to="/login">
-            <LogIn :size="14" />
-            扫码登录
-          </RouterLink>
         </div>
       </div>
     </section>

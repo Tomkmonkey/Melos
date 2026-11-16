@@ -1345,6 +1345,10 @@ input {
   text-decoration-color: var(--text);
 }
 
+.artist-separator {
+  color: var(--text-faint);
+}
+
 .player-controls-block {
   display: flex;
   flex-direction: column;

@@ -60,6 +60,12 @@ async function load() {
       ...song,
       artist: song.artist === '未知艺人' ? artist.value.name : song.artist,
       artistId: song.artistId ?? props.id,
+      artists: song.artists?.length
+        ? song.artists.map((item) => ({
+            ...item,
+            id: item.id ?? (item.name === artist.value.name ? props.id : undefined),
+          }))
+        : [{ id: props.id, name: artist.value.name }],
       cover: song.cover ?? cover,
     }))
   }

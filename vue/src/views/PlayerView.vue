@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { computed, nextTick, ref, watch } from 'vue'
+import { storeToRefs } from 'pinia'
 import { useRouter } from 'vue-router'
 import {
   Captions,
@@ -18,21 +19,25 @@ import {
 import CoverImage from '../components/CoverImage.vue'
 import CommentsPanel from '../components/CommentsPanel.vue'
 import SongList from '../components/SongList.vue'
-import { fetchLyrics, type LyricLine } from '../api/lyrics'
+import type { LyricLine } from '../api/lyrics'
+import { useLyricsStore } from '../stores/lyrics'
 import { usePlayerStore } from '../stores/player'
 import { useSettingsStore } from '../stores/settings'
 import { formatSeconds } from '../utils'
 
 const player = usePlayerStore()
 const settings = useSettingsStore()
+const lyricsStore = useLyricsStore()
+const {
+  lines: lyrics,
+  loading: lyricsLoading,
+  error: lyricsError,
+} = storeToRefs(lyricsStore)
 const router = useRouter()
 
 const tab = ref<'lyrics' | 'queue'>('lyrics')
 const mobilePage = ref<'player' | 'lyrics'>('player')
 const showComments = ref(false)
-const lyrics = ref<LyricLine[]>([])
-const lyricsLoading = ref(false)
-const lyricsError = ref('')
 const lyricsBox = ref<HTMLElement | null>(null)
 
 let touchStartX = 0
@@ -58,25 +63,10 @@ const activeLyricIndex = computed(() => {
   return found
 })
 
-async function loadLyrics() {
-  const song = player.current
-  lyrics.value = []
-  lyricsError.value = ''
-  if (!song) return
-  lyricsLoading.value = true
-  try {
-    lyrics.value = await fetchLyrics(song)
-  } catch {
-    lyricsError.value = '歌词加载失败，请稍后重试'
-  } finally {
-    lyricsLoading.value = false
-  }
-}
-
 watch(
   () => player.current?.hash,
   () => {
-    void loadLyrics()
+    void lyricsStore.load(player.current)
   },
   { immediate: true },
 )
@@ -185,6 +175,16 @@ const progress = computed(() => {
 })
 
 const volumeProgress = computed(() => Math.round(player.volume * 100))
+
+const currentArtists = computed(() => {
+  const song = player.current
+  if (!song?.artist) return []
+  if (song.artists?.length) return song.artists
+  if (song.artistId && !/\s[/、&]\s|、/.test(song.artist)) {
+    return [{ id: song.artistId, name: song.artist }]
+  }
+  return [{ name: song.artist }]
+})
 
 const qualityOpen = ref(false)
 const qualityOptions = [
@@ -301,14 +301,17 @@ function playAt(index: number) {
         />
         <h1 class="full-player-title">{{ player.current.title }}</h1>
         <p class="full-player-artist">
-          <RouterLink
-            v-if="player.current.artistId"
-            class="meta-link"
-            :to="`/artist/${player.current.artistId}`"
-          >
-            {{ player.current.artist }}
-          </RouterLink>
-          <span v-else>{{ player.current.artist }}</span>
+          <template v-for="(artist, artistIndex) in currentArtists" :key="`${artist.id ?? 'name'}-${artist.name}-${artistIndex}`">
+            <span v-if="artistIndex > 0" class="artist-separator"> / </span>
+            <RouterLink
+              v-if="artist.id"
+              class="meta-link"
+              :to="`/artist/${artist.id}`"
+            >
+              {{ artist.name }}
+            </RouterLink>
+            <span v-else>{{ artist.name }}</span>
+          </template>
           <template v-if="player.current.albumName">
             ·
             <RouterLink

@@ -1,4 +1,4 @@
-import type { Playlist, RecommendedCard, Song, UserProfile } from './types'
+import type { ArtistRef, Playlist, RecommendedCard, Song, UserProfile } from './types'
 
 type Any = Record<string, any>
 
@@ -82,19 +82,71 @@ function artistNames(raw: Any): string[] {
       add(value.name ?? value.author_name ?? value.SingerName ?? value.singername ?? value.singer_name)
     }
   }
-  add(
-    raw.SingerName ??
-      raw.author_name ??
-      raw.singername ??
-      raw.singer_name ??
-      raw.singerName ??
-      raw.authorName,
-  )
+  // 数组里已经有完整歌手名时，SingerName 往往是把数组重新拼起来的重复文本。
+  if (!names.length) {
+    add(
+      raw.SingerName ??
+        raw.author_name ??
+        raw.singername ??
+        raw.singer_name ??
+        raw.singerName ??
+        raw.authorName,
+    )
+  }
   return names
 }
 
 function escapeRegExp(value: string): string {
   return value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+}
+
+function artistRefs(raw: Any): ArtistRef[] {
+  const refs: ArtistRef[] = []
+  const seen = new Set<string>()
+  const add = (nameValue: unknown, idValue: unknown) => {
+    const name = str(nameValue)?.trim()
+    if (!name) return
+    const id = str(idValue)?.trim()
+    const key = `${name}|${id ?? ''}`
+    if (seen.has(key)) return
+    seen.add(key)
+    refs.push(id ? { id, name } : { name })
+  }
+
+  for (const key of ['singers', 'Singers', 'authors']) {
+    const value = raw[key]
+    if (Array.isArray(value)) {
+      for (const item of value) {
+        if (isRecord(item)) {
+          add(
+            item.name ??
+              item.author_name ??
+              item.SingerName ??
+              item.singername ??
+              item.singer_name,
+            item.id ?? item.author_id ?? item.singer_id,
+          )
+        } else {
+          add(item, undefined)
+        }
+      }
+    } else if (isRecord(value)) {
+      add(
+        value.name ?? value.author_name ?? value.SingerName ?? value.singername,
+        value.id ?? value.author_id ?? value.singer_id,
+      )
+    }
+  }
+
+  if (!refs.length) {
+    const ids = Array.isArray(raw.SingerId)
+      ? raw.SingerId
+      : Array.isArray(raw.singerids)
+        ? raw.singerids
+        : []
+    artistNames(raw).forEach((name, index) => add(name, ids[index]))
+  }
+  return refs
 }
 
 function stripArtistPrefix(title: string, artist: string): string {
@@ -189,6 +241,7 @@ export function parseSong(raw: Any): Song {
     title,
     artist,
     artistId,
+    artists: artistRefs(raw),
     hash,
     albumId:
       str(raw.AlbumID) ??

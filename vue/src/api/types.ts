@@ -1,8 +1,14 @@
+export interface ArtistRef {
+  id?: string
+  name: string
+}
+
 export interface Song {
   id: string
   title: string
   artist: string
   artistId?: string
+  artists?: ArtistRef[]
   hash: string
   albumId?: string
   albumAudioId?: string
