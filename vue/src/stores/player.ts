@@ -7,6 +7,16 @@ const STATE_KEY = 'melos.player.v1'
 const audio = new Audio()
 audio.preload = 'auto'
 
+// 下一首音频预加载元素：只缓冲数据，不参与播放。
+const preloadAudio = document.createElement('audio')
+preloadAudio.preload = 'auto'
+preloadAudio.muted = true
+preloadAudio.setAttribute('playsinline', '')
+preloadAudio.setAttribute('aria-hidden', 'true')
+preloadAudio.dataset.melosPreload = 'next'
+preloadAudio.style.display = 'none'
+if (document.body) document.body.appendChild(preloadAudio)
+
 type RepeatMode = 'off' | 'all' | 'one'
 type Quality = '320' | '128' | 'flac'
 
@@ -64,10 +74,11 @@ export const usePlayerStore = defineStore('player', () => {
   let requestSerial = 0
   let restorePosition = positionMs.value
   let lastPersisted = 0
-  const PREFETCH_AHEAD = 5
+  const PREFETCH_AHEAD = 10
   const prefetchedTracks = new Map<number, { hash: string; quality: Quality; url: string }>()
   const prefetching = new Set<number>()
   let prefetchEpoch = 0
+  let preloadUrl = ''
   let endedHandled = false
   let endedResetTimer: number | undefined
   let ignoreEndedUntil = 0
@@ -206,10 +217,58 @@ export const usePlayerStore = defineStore('player', () => {
     return null
   }
 
+  function clearPreloadAudio() {
+    if (!preloadUrl && !preloadAudio.getAttribute('src')) return
+    preloadUrl = ''
+    try {
+      preloadAudio.pause()
+      preloadAudio.removeAttribute('src')
+      preloadAudio.load()
+    } catch {
+      /* 忽略预加载释放异常 */
+    }
+  }
+
+  function syncPreloadAudio() {
+    const target = nextQueueIndex()
+    if (target === null || target === index.value) {
+      clearPreloadAudio()
+      return
+    }
+    const item = prefetchedTracks.get(target)
+    const song = queue.value[target]
+    if (!item || !song || item.hash !== song.hash || item.quality !== quality.value) {
+      clearPreloadAudio()
+      return
+    }
+    // 等当前歌曲真正开始播放后再缓冲下一首，避免拖慢当前歌曲的首包。
+    if (!playing.value) return
+    if (preloadUrl === item.url) return
+    const connection = (
+      navigator as { connection?: { saveData?: boolean; effectiveType?: string } }
+    ).connection
+    if (
+      connection?.saveData ||
+      connection?.effectiveType === 'slow-2g' ||
+      connection?.effectiveType === '2g'
+    ) {
+      clearPreloadAudio()
+      return
+    }
+    preloadUrl = item.url
+    preloadAudio.src = proxyAudio(item.url)
+    try {
+      preloadAudio.load()
+    } catch {
+      /* 预加载失败不影响正常切歌 */
+    }
+  }
+
   function clearPrefetch() {
     prefetchEpoch++
     prefetchedTracks.clear()
     prefetching.clear()
+    clearPreloadAudio()
   }
 
   function upcomingIndices(): number[] {
@@ -243,6 +302,7 @@ export const usePlayerStore = defineStore('player', () => {
             quality: expectedQuality,
             url,
           })
+          syncPreloadAudio()
         }
       })
       .catch(() => {
@@ -271,6 +331,7 @@ export const usePlayerStore = defineStore('player', () => {
     for (const key of prefetchedTracks.keys()) {
       if (!wanted.has(key)) prefetchedTracks.delete(key)
     }
+    syncPreloadAudio()
     const epoch = prefetchEpoch
     for (const target of targets) prefetchTrack(target, epoch)
   }
