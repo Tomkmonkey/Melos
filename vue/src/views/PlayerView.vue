@@ -165,10 +165,10 @@ function onTouchEnd(event: TouchEvent) {
   const dy = touch.clientY - touchStartY
   if (Math.abs(dx) < 50 || Math.abs(dx) < Math.abs(dy) * 1.2) return
 
-  // 向右滑进入歌词页，向左滑回到封面页。
-  if (mobilePage.value === 'player' && dx > 0) {
+  // 向左滑进入歌词页，向右滑回到封面页。
+  if (mobilePage.value === 'player' && dx < 0) {
     showLyricsPage()
-  } else if (mobilePage.value === 'lyrics' && dx < 0) {
+  } else if (mobilePage.value === 'lyrics' && dx > 0) {
     showPlayerPage()
   }
 }
