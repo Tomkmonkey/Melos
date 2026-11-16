@@ -7,6 +7,7 @@ import {
   LogIn,
   LogOut,
   Search,
+  Settings,
 } from 'lucide-vue-next'
 import { useAuthStore } from '../stores/auth'
 
@@ -60,6 +61,14 @@ async function logout() {
         >
           <Library :size="18" />
           <span>我的音乐</span>
+        </RouterLink>
+        <RouterLink
+          to="/settings"
+          class="nav-item"
+          :class="{ 'router-link-active': route.name === 'settings' }"
+        >
+          <Settings :size="18" />
+          <span>设置</span>
         </RouterLink>
       </nav>
 

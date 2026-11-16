@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { useRoute } from 'vue-router'
-import { Compass, Search, User } from 'lucide-vue-next'
+import { Compass, Search, Settings, User } from 'lucide-vue-next'
 
 const route = useRoute()
 </script>
@@ -30,6 +30,14 @@ const route = useRoute()
     >
       <User :size="21" />
       <span>我的</span>
+    </RouterLink>
+    <RouterLink
+      to="/settings"
+      class="bottom-nav-item"
+      :class="{ active: route.name === 'settings' }"
+    >
+      <Settings :size="21" />
+      <span>设置</span>
     </RouterLink>
   </nav>
 </template>

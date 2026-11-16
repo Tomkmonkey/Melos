@@ -22,6 +22,12 @@ const router = createRouter({
       meta: { title: '我的音乐' },
     },
     {
+      path: '/settings',
+      name: 'settings',
+      component: () => import('./views/SettingsView.vue'),
+      meta: { title: '设置' },
+    },
+    {
       path: '/playlist/:id',
       name: 'playlist',
       component: () => import('./views/PlaylistView.vue'),

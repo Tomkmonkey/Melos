@@ -20,9 +20,11 @@ import CommentsPanel from '../components/CommentsPanel.vue'
 import SongList from '../components/SongList.vue'
 import { fetchLyrics, type LyricLine } from '../api/lyrics'
 import { usePlayerStore } from '../stores/player'
+import { useSettingsStore } from '../stores/settings'
 import { formatSeconds } from '../utils'
 
 const player = usePlayerStore()
+const settings = useSettingsStore()
 const router = useRouter()
 
 const tab = ref<'lyrics' | 'queue'>('lyrics')
@@ -79,7 +81,8 @@ watch(
   { immediate: true },
 )
 
-async function scrollActiveLyric() {
+async function scrollActiveLyric(force = false) {
+  if (!force && !settings.lyricsAutoScroll) return
   await nextTick()
   const index = activeLyricIndex.value
   const box = lyricsBox.value
@@ -88,7 +91,7 @@ async function scrollActiveLyric() {
   if (!line) return
   box.scrollTo({
     top: line.offsetTop - box.clientHeight / 2 + line.clientHeight / 2,
-    behavior: 'smooth',
+    behavior: settings.reduceMotion ? 'auto' : 'smooth',
   })
 }
 
@@ -97,12 +100,26 @@ watch(activeLyricIndex, () => {
 })
 
 watch([mobilePage, tab], () => {
-  if (tab.value === 'lyrics') void scrollActiveLyric()
+  if (tab.value === 'lyrics') void scrollActiveLyric(true)
 })
+
+watch(
+  () => settings.lyricsAutoScroll,
+  (enabled) => {
+    if (enabled) void scrollActiveLyric(true)
+  },
+)
+
+watch(
+  () => settings.lyricFontSize,
+  () => {
+    void scrollActiveLyric(true)
+  },
+)
 
 function selectTab(next: 'lyrics' | 'queue') {
   tab.value = next
-  if (next === 'lyrics') void scrollActiveLyric()
+  if (next === 'lyrics') void scrollActiveLyric(true)
 }
 
 function showPlayerPage() {
@@ -112,7 +129,7 @@ function showPlayerPage() {
 function showLyricsPage() {
   mobilePage.value = 'lyrics'
   tab.value = 'lyrics'
-  void scrollActiveLyric()
+  void scrollActiveLyric(true)
 }
 
 function toggleLyricsPage() {
@@ -184,12 +201,19 @@ function chooseQuality(value: '128' | '320' | 'flac') {
   void player.setQuality(value)
 }
 
+watch(
+  () => player.current?.hash,
+  () => {
+    qualityOpen.value = false
+  },
+)
+
 const CREDIT_PATTERN =
   /^(作词|作曲|编曲|制作人|词|曲|演唱|原唱|混音|母带|吉他|贝斯|鼓|和声|录音|监制|出品|发行|OP|SP|词曲|制作|Lyricist|Composer|Arranger|Producer)\s*[：:]/i
 
 // 标题与制作名单不显示音译，避免歌词页顶部出现无关的罗马音。
 function showRomanization(line: LyricLine, index: number): boolean {
-  if (line.translation || !line.romanization) return false
+  if (!line.romanization) return false
   const text = line.text.trim()
   if (CREDIT_PATTERN.test(text)) return false
   if (index === 0 && text.includes(' - ')) return false
@@ -410,7 +434,7 @@ function playAt(index: number) {
         </div>
       </section>
 
-      <section class="player-panel">
+      <section class="player-panel" :class="`lyrics-size-${settings.lyricFontSize}`">
         <div class="lyrics-page-head">
           <div class="lyrics-page-title">{{ player.current.title }}</div>
           <div class="lyrics-page-artist">{{ player.current.artist }}</div>
@@ -458,10 +482,13 @@ function playAt(index: number) {
               :class="{ active: index === activeLyricIndex }"
             >
               <div class="lyric-text">{{ line.text }}</div>
-              <div v-if="line.translation" class="lyric-translation">
+              <div v-if="settings.lyricsTranslation && line.translation" class="lyric-translation">
                 {{ line.translation }}
               </div>
-              <div v-else-if="showRomanization(line, index)" class="lyric-translation">
+              <div
+                v-else-if="settings.lyricsRomanization && showRomanization(line, index)"
+                class="lyric-translation"
+              >
                 {{ line.romanization }}
               </div>
             </div>

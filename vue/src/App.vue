@@ -5,9 +5,11 @@ import AppSidebar from './components/AppSidebar.vue'
 import BottomNav from './components/BottomNav.vue'
 import PlayerBar from './components/PlayerBar.vue'
 import { usePlayerStore } from './stores/player'
+import { useSettingsStore } from './stores/settings'
 
 const route = useRoute()
 const player = usePlayerStore()
+const settings = useSettingsStore()
 
 const immersive = computed(() => route.meta.immersive === true)
 const showPlayer = computed(() => !immersive.value && !!player.current)
@@ -17,7 +19,7 @@ const cachedViews = ['HomeView', 'SearchView', 'LibraryView', 'PlaylistView']
 </script>
 
 <template>
-  <div class="app-shell" :class="{ immersive }">
+  <div class="app-shell" :class="{ immersive, 'reduce-motion': settings.reduceMotion }">
     <AppSidebar v-if="!immersive" />
     <main class="main" :class="{ 'no-player': !showPlayer, immersive }">
       <RouterView v-slot="{ Component }">

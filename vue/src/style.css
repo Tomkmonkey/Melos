@@ -1594,7 +1594,7 @@ input[type='range'] {
 
 .lyric-text {
   color: var(--text-faint);
-  font-size: 15px;
+  font-size: var(--lyric-font-size, 15px);
   font-weight: 450;
   line-height: 1.55;
 }
@@ -1607,12 +1607,24 @@ input[type='range'] {
 .lyric-translation {
   margin-top: 2px;
   color: var(--text-faint);
-  font-size: 12px;
+  font-size: calc(var(--lyric-font-size, 15px) * 0.8);
   line-height: 1.45;
 }
 
 .lyric-line.active .lyric-translation {
   color: var(--text-muted);
+}
+
+.player-panel.lyrics-size-small {
+  --lyric-font-size: 13px;
+}
+
+.player-panel.lyrics-size-normal {
+  --lyric-font-size: 15px;
+}
+
+.player-panel.lyrics-size-large {
+  --lyric-font-size: 18px;
 }
 
 .queue-panel {
@@ -1981,6 +1993,186 @@ input[type='range'] {
 .image-viewer-hint {
   color: rgba(255, 255, 255, 0.5);
   font-size: 11px;
+}
+
+/* ---------- Settings ---------- */
+
+.settings-page {
+  max-width: 760px;
+}
+
+.settings-section {
+  margin-top: var(--space-6);
+}
+
+.settings-section-head {
+  margin-bottom: var(--space-3);
+}
+
+.settings-section-title {
+  margin: 0;
+  color: var(--text);
+  font-size: 15px;
+  font-weight: 650;
+  letter-spacing: -0.01em;
+}
+
+.settings-section-desc {
+  margin: 3px 0 0;
+  color: var(--text-faint);
+  font-size: 11.5px;
+}
+
+.settings-card {
+  overflow: hidden;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  background: var(--white);
+}
+
+.setting-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+  padding: 14px var(--space-4);
+  border-bottom: 1px solid var(--border);
+}
+
+.setting-row:last-child {
+  border-bottom: 0;
+}
+
+.setting-copy {
+  flex: 1 1 220px;
+  min-width: 0;
+}
+
+.setting-label {
+  color: var(--text);
+  font-size: 13.5px;
+  font-weight: 600;
+}
+
+.setting-desc {
+  margin: 3px 0 0;
+  color: var(--text-faint);
+  font-size: 11.5px;
+  line-height: 1.5;
+}
+
+.setting-row > .segmented,
+.setting-row > .switch,
+.setting-row > .btn,
+.setting-row > .setting-volume {
+  margin-left: auto;
+}
+
+.segmented {
+  display: inline-flex;
+  gap: 2px;
+  padding: 2px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--bg-subtle);
+}
+
+.segmented button {
+  min-height: 26px;
+  padding: 0 9px;
+  border-radius: 6px;
+  color: var(--text-muted);
+  font-size: 11.5px;
+  font-weight: 550;
+  line-height: 1.2;
+  white-space: nowrap;
+}
+
+.segmented button.active {
+  background: var(--white);
+  color: var(--text);
+  box-shadow: var(--shadow-sm);
+}
+
+.switch {
+  position: relative;
+  width: 40px;
+  height: 24px;
+  padding: 0;
+  border: 0;
+  border-radius: 999px;
+  background: var(--border-strong);
+  transition: background-color 0.15s ease;
+}
+
+.switch::after {
+  position: absolute;
+  top: 3px;
+  left: 3px;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: var(--white);
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.16);
+  content: '';
+  transition: transform 0.15s ease;
+}
+
+.switch.on {
+  background: var(--text);
+}
+
+.switch.on::after {
+  transform: translateX(16px);
+}
+
+.setting-volume {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  color: var(--text-faint);
+  font-size: 11.5px;
+  font-variant-numeric: tabular-nums;
+}
+
+.setting-volume input[type='range'] {
+  width: 140px;
+}
+
+.settings-account {
+  display: flex;
+  flex: 1 1 240px;
+  align-items: center;
+  gap: var(--space-3);
+  min-width: 0;
+}
+
+.settings-account .avatar,
+.settings-account .avatar-fallback {
+  width: 40px;
+  height: 40px;
+  flex-basis: 40px;
+}
+
+.btn-danger {
+  border-color: var(--danger-border);
+  color: var(--danger);
+}
+
+.btn-danger:hover {
+  border-color: var(--danger-border);
+  background: var(--danger-bg);
+  color: var(--danger);
+}
+
+.reduce-motion *,
+.reduce-motion *::before,
+.reduce-motion *::after {
+  animation-duration: 0.01ms !important;
+  animation-iteration-count: 1 !important;
+  scroll-behavior: auto !important;
+  transition-duration: 0.01ms !important;
 }
 
 .comment-replies {

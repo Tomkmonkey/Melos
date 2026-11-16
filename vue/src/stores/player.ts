@@ -383,6 +383,29 @@ export const usePlayerStore = defineStore('player', () => {
     persist(true)
   }
 
+  function setRepeat(mode: RepeatMode) {
+    repeat.value = mode
+    persist(true)
+  }
+
+  function clearQueue() {
+    requestSerial++
+    audio.pause()
+    hasSource.value = false
+    audio.removeAttribute('src')
+    audio.load()
+    queue.value = []
+    index.value = -1
+    positionMs.value = 0
+    durationMs.value = 0
+    restorePosition = 0
+    playing.value = false
+    loading.value = false
+    error.value = ''
+    if ('mediaSession' in navigator) navigator.mediaSession.metadata = null
+    persist(true)
+  }
+
   function clearError() {
     error.value = ''
   }
@@ -413,7 +436,9 @@ export const usePlayerStore = defineStore('player', () => {
     seekMs,
     setVolume,
     setQuality,
+    setRepeat,
     cycleRepeat,
+    clearQueue,
     clearError,
   }
 })

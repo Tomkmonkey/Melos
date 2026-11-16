@@ -126,6 +126,15 @@ MELOS_WEB_PORT=8080 docker compose -f docker-compose.web.yml up -d --build
 - 发现 / 搜索 / 歌单页自动缓存，进入播放页再返回不重新加载
 - PWA 安装、离线壳、独立窗口运行
 
+### ⚙️ 设置
+
+- 播放：默认音质、音量、循环模式
+- 歌词：翻译 / 音译开关、自动滚动、字号
+- 搜索：搜索建议开关、清除最近搜索
+- 外观与性能：减少动画
+- 账号：查看登录状态、退出登录
+- 数据：清空播放队列、恢复默认设置
+
 ---
 
 ## 📸 界面预览
@@ -145,6 +154,10 @@ MELOS_WEB_PORT=8080 docker compose -f docker-compose.web.yml up -d --build
 | 手机播放页 | 音质选择 |
 |:----------:|:--------:|
 | ![手机播放](screenshots/vue-player-mobile.png) | ![音质选择](screenshots/vue-quality.png) |
+
+| 设置（桌面） | 设置（手机） |
+|:----------:|:--------:|
+| ![设置桌面](screenshots/vue-settings.png) | ![设置手机](screenshots/vue-settings-mobile.png) |
 
 | 歌手页 | 专辑页 |
 |:------:|:------:|
@@ -262,7 +275,7 @@ vue/                         # Vue 3 + Vite + TypeScript 前端
 │   ├── api/                 # HTTP 客户端、解析、歌词、评论、歌手/专辑
 │   ├── stores/              # 登录、播放器状态
 │   ├── components/          # 播放条、评论面板、图片查看器等
-│   └── views/               # 首页、搜索、歌手、专辑、歌单、播放页
+│   └── views/               # 首页、搜索、歌手、专辑、歌单、播放页、设置
 ├── public/                  # PWA 图标
 └── vite.config.ts           # PWA / 构建 / 开发代理
 api.json                     # KuGouMusicApi OpenAPI 文档
@@ -324,6 +337,7 @@ docker compose -f docker-compose.web.yml up -d --build
 
 ### 近期更新
 
+- 新增设置页：音质、音量、循环模式、歌词显示、搜索、动画、账号与数据管理
 - 播放页音质选择（128K / 320K / FLAC）
 - 评论图片内置查看器
 - 搜索页新增歌单搜索

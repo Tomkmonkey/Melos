@@ -8,6 +8,7 @@ import { apiGet } from '../api/client'
 import { parsePlaylists, parseSongList } from '../api/parse'
 import type { Playlist, Song } from '../api/types'
 import { usePlayerStore } from '../stores/player'
+import { useSettingsStore } from '../stores/settings'
 
 defineOptions({ name: 'SearchView' })
 
@@ -16,6 +17,7 @@ type SearchMode = 'song' | 'special'
 const route = useRoute()
 const router = useRouter()
 const player = usePlayerStore()
+const settings = useSettingsStore()
 
 const RECENT_KEY = 'melos.search.recent'
 const FALLBACK_HOT = ['周杰伦', '林俊杰', 'Taylor Swift', '纯音乐', '粤语', '摇滚']
@@ -124,6 +126,12 @@ function scheduleSuggest(value: string) {
   window.clearTimeout(suggestTimer)
   const query = value.trim()
   suggestSerial++
+  if (!settings.searchSuggest) {
+    suggestions.value = []
+    suggestVisible.value = false
+    suggestLoading.value = false
+    return
+  }
   if (!query) {
     suggestions.value = []
     suggestVisible.value = false
@@ -140,7 +148,23 @@ function scheduleSuggest(value: string) {
 
 watch(keyword, scheduleSuggest)
 
+watch(
+  () => settings.searchSuggest,
+  (enabled) => {
+    if (enabled) return
+    window.clearTimeout(suggestTimer)
+    suggestions.value = []
+    suggestVisible.value = false
+    suggestLoading.value = false
+  },
+)
+
+function onSearchHistoryCleared() {
+  recent.value = []
+}
+
 function onInputFocus() {
+  if (!settings.searchSuggest) return
   const query = keyword.value.trim()
   if (!query || query === lastSearched) return
   if (suggestions.value.length) {
@@ -266,11 +290,13 @@ watch(
 )
 
 onMounted(() => {
+  window.addEventListener('melos:search-history-cleared', onSearchHistoryCleared)
   void loadHot()
   if (keyword.value) void search()
 })
 
 onBeforeUnmount(() => {
+  window.removeEventListener('melos:search-history-cleared', onSearchHistoryCleared)
   window.clearTimeout(suggestTimer)
   window.clearTimeout(blurTimer)
 })
