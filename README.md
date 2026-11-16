@@ -128,6 +128,8 @@ MELOS_WEB_PORT=8080 docker compose -f docker-compose.web.yml up -d --build
 
 ### ⚙️ 设置
 
+- 每日 VIP：听歌奖励 + 广告奖励自动领取，显示今日进度与到期时间
+  （领取逻辑参考 [develop202/kgcheckin](https://github.com/develop202/kgcheckin)）
 - 播放：默认音质、音量、循环模式
 - 歌词：翻译 / 音译开关、自动滚动、字号
 - 搜索：搜索建议开关、清除最近搜索
@@ -338,6 +340,7 @@ docker compose -f docker-compose.web.yml up -d --build
 ### 近期更新
 
 - 新增设置页：音质、音量、循环模式、歌词显示、搜索、动画、账号与数据管理
+- 设置页支持每日领取酷狗概念 VIP
 - 播放页音质选择（128K / 320K / FLAC）
 - 评论图片内置查看器
 - 搜索页新增歌单搜索

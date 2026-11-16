@@ -1,8 +1,9 @@
 <script setup lang="ts">
-import { computed, onBeforeUnmount, ref } from 'vue'
+import { computed, onBeforeUnmount, onMounted, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import {
   ExternalLink,
+  Gift,
   LogIn,
   LogOut,
   RotateCcw,
@@ -13,12 +14,14 @@ import ToggleSwitch from '../components/ToggleSwitch.vue'
 import { useAuthStore } from '../stores/auth'
 import { usePlayerStore } from '../stores/player'
 import { useSettingsStore, type LyricFontSize } from '../stores/settings'
+import { useVipStore } from '../stores/vip'
 
 defineOptions({ name: 'SettingsView' })
 
 const auth = useAuthStore()
 const player = usePlayerStore()
 const settings = useSettingsStore()
+const vip = useVipStore()
 const router = useRouter()
 
 const qualityOptions = [
@@ -42,6 +45,43 @@ const appVersion = __APP_VERSION__
 const avatarInitial = computed(() =>
   (auth.profile?.nickname ?? 'M').trim().slice(0, 1).toUpperCase(),
 )
+
+const todayKey = new Intl.DateTimeFormat('en-CA', {
+  timeZone: 'Asia/Shanghai',
+  year: 'numeric',
+  month: '2-digit',
+  day: '2-digit',
+}).format(new Date())
+
+const vipExpiryText = computed(() => {
+  const value = vip.expiry?.slice(0, 10)
+  if (!value) return '每日听歌与广告奖励'
+  if (value < todayKey) return '当前暂无生效中的概念 VIP'
+  return `VIP 有效期至 ${value}`
+})
+
+const vipStatusText = computed(() => {
+  if (vip.remain === 0) return '今日已领完'
+  if (vip.remain !== null) return `今日还可领取约 ${vip.remainVipHour} 小时`
+  return `每天最多 ${vip.total} 次 · 每次约 ${vip.awardVipHour} 小时`
+})
+
+const vipButtonLabel = computed(() => {
+  if (vip.running) return '领取中…'
+  if (vip.remain === 0) return '今日已领完'
+  return vip.state ? '继续领取' : '领取今日 VIP'
+})
+
+function startVipClaim() {
+  if (!auth.loggedIn || vip.running) return
+  const candidate = player.current?.albumAudioId
+  const mixsongid = candidate && /^\d+$/.test(candidate) ? candidate : undefined
+  void vip.start(mixsongid)
+}
+
+onMounted(() => {
+  if (auth.loggedIn) void vip.refreshExpiry()
+})
 
 const historyCleared = ref(false)
 const queueConfirm = ref(false)
@@ -118,6 +158,71 @@ onBeforeUnmount(() => {
         <p class="page-subtitle">播放、歌词、搜索与账号相关的常用选项</p>
       </div>
     </header>
+
+    <section class="settings-section">
+      <div class="settings-section-head">
+        <h2 class="settings-section-title">每日 VIP</h2>
+        <p class="settings-section-desc">领取酷狗概念版当天的听歌与广告 VIP 奖励。</p>
+      </div>
+      <div class="settings-card vip-card">
+        <div class="vip-head">
+          <span class="vip-badge">VIP</span>
+          <div class="vip-copy">
+            <div class="setting-label">每日领取</div>
+            <p class="setting-desc">{{ vipExpiryText }}</p>
+          </div>
+          <span class="vip-status">{{ vipStatusText }}</span>
+        </div>
+
+        <div v-if="vip.state" class="vip-progress">
+          <div class="vip-progress-track">
+            <span :style="{ width: `${vip.progress}%` }"></span>
+          </div>
+          <div class="vip-progress-meta">
+            <span>今日已领 {{ vip.done }} / {{ vip.total }} 次</span>
+            <span>每次约 {{ vip.awardVipHour }} 小时</span>
+          </div>
+        </div>
+
+        <div class="vip-actions">
+          <RouterLink
+            v-if="!auth.loggedIn"
+            class="btn btn-primary btn-sm"
+            to="/login"
+          >
+            <LogIn :size="14" />
+            登录后领取
+          </RouterLink>
+          <button
+            v-else
+            class="btn btn-primary btn-sm"
+            type="button"
+            :disabled="vip.running || vip.remain === 0"
+            @click="startVipClaim"
+          >
+            <Gift :size="14" />
+            {{ vipButtonLabel }}
+          </button>
+          <button
+            v-if="vip.running"
+            class="btn btn-sm"
+            type="button"
+            @click="vip.stop()"
+          >
+            停止
+          </button>
+          <span v-if="vip.running && vip.remainingSeconds > 0" class="vip-countdown">
+            下次领取还有 {{ vip.remainingSeconds }} 秒
+          </span>
+        </div>
+
+        <p v-if="vip.message" class="vip-message">{{ vip.message }}</p>
+        <p v-if="vip.error" class="vip-error">{{ vip.error }}</p>
+        <p class="vip-note">
+          先领取听歌奖励，再每隔约 30 秒领取一次广告奖励；领取期间请保持页面打开。
+        </p>
+      </div>
+    </section>
 
     <section class="settings-section">
       <div class="settings-section-head">

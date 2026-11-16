@@ -155,9 +155,11 @@ export async function apiRequest<T = any>(
   }
 
   if (!response.ok) {
+    const code = raw && typeof raw === 'object' ? raw.error_code : undefined
     throw new ApiError(
       errorMessage(raw, text) || `请求失败（HTTP ${response.status}）`,
       response.status,
+      code,
     )
   }
 
