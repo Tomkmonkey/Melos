@@ -4,7 +4,6 @@ import { storeToRefs } from 'pinia'
 import { useRouter } from 'vue-router'
 import {
   Captions,
-  Check,
   ChevronDown,
   Heart,
   ListMusic,
@@ -225,28 +224,6 @@ watch(
   { immediate: true },
 )
 
-const qualityOpen = ref(false)
-const qualityOptions = [
-  { value: '128' as const, label: '128K', title: '标准音质' },
-  { value: '320' as const, label: '320K', title: '高品音质' },
-  { value: 'flac' as const, label: 'FLAC', title: '无损音质' },
-]
-const qualityLabel = computed(() =>
-  player.quality === 'flac' ? 'FLAC' : `${player.quality}K`,
-)
-
-function chooseQuality(value: '128' | '320' | 'flac') {
-  qualityOpen.value = false
-  void player.setQuality(value)
-}
-
-watch(
-  () => player.current?.hash,
-  () => {
-    qualityOpen.value = false
-  },
-)
-
 const CREDIT_PATTERN =
   /^(作词|作曲|编曲|制作人|词|曲|演唱|原唱|混音|母带|吉他|贝斯|鼓|和声|录音|监制|出品|发行|OP|SP|词曲|制作|Lyricist|Composer|Arranger|Producer)\s*[：:]/i
 
@@ -379,7 +356,24 @@ function playAt(index: number) {
               @input="seek"
             />
             <span>{{ formatSeconds(player.durationMs / 1000) }}</span>
+            <span class="player-volume">
+              <Volume2 :size="16" />
+              <input
+                type="range"
+                min="0"
+                max="1"
+                step="0.01"
+                :value="player.volume"
+                :style="{ '--progress': `${volumeProgress}%` }"
+                aria-label="音量"
+                @input="changeVolume"
+              />
+            </span>
           </div>
+
+          <p v-if="favorites.actionError" class="player-action-error">
+            {{ favorites.actionError }}
+          </p>
 
           <div class="player-controls-row">
             <button
@@ -430,68 +424,6 @@ function playAt(index: number) {
               <Repeat1 v-if="player.repeat === 'one'" :size="20" />
               <Repeat v-else :size="20" />
             </button>
-          </div>
-
-          <p v-if="favorites.actionError" class="player-action-error">
-            {{ favorites.actionError }}
-          </p>
-
-          <div class="player-extra">
-            <span class="quality-picker">
-              <button
-                class="quality-trigger"
-                type="button"
-                aria-label="选择音质"
-                :aria-expanded="qualityOpen"
-                @click.stop="qualityOpen = !qualityOpen"
-              >
-                音质
-                <strong>{{ qualityLabel }}</strong>
-                <ChevronDown :size="13" />
-              </button>
-              <span
-                v-if="qualityOpen"
-                class="menu-backdrop"
-                aria-hidden="true"
-                @click="qualityOpen = false"
-              ></span>
-              <div
-                v-if="qualityOpen"
-                class="quality-menu"
-                role="menu"
-                aria-label="音质"
-                @keydown.esc="qualityOpen = false"
-              >
-                <button
-                  v-for="option in qualityOptions"
-                  :key="option.value"
-                  class="quality-option"
-                  :class="{ active: player.quality === option.value }"
-                  type="button"
-                  role="menuitem"
-                  @click="chooseQuality(option.value)"
-                >
-                  <span class="quality-option-text">
-                    <strong>{{ option.label }}</strong>
-                    <small>{{ option.title }}</small>
-                  </span>
-                  <Check v-if="player.quality === option.value" :size="15" />
-                </button>
-              </div>
-            </span>
-            <span class="player-volume" style="margin-left: auto">
-              <Volume2 :size="16" />
-              <input
-                type="range"
-                min="0"
-                max="1"
-                step="0.01"
-                :value="player.volume"
-                :style="{ '--progress': `${volumeProgress}%` }"
-                aria-label="音量"
-                @input="changeVolume"
-              />
-            </span>
           </div>
         </div>
       </section>

@@ -93,7 +93,7 @@ MELOS_WEB_PORT=8080 docker compose -f docker-compose.web.yml up -d --build
 ### 🎵 播放
 
 - HTML5 Audio + Media Session（锁屏 / 系统媒体控制）
-- **音质选择：128K / 320K / FLAC**，切换时保持当前播放位置
+- **音质选择：128K / 320K / FLAC**（可在设置页选择），切换时保持当前播放位置
 - 320K / 128K 自动降级重试
 - 播放队列、上一首 / 下一首、进度拖动、音量、循环模式
 - **收藏 / 取消收藏**：同步到酷狗「我喜欢」，播放控件按「收藏 — 播放控件 — 循环模式」排布
@@ -156,9 +156,9 @@ MELOS_WEB_PORT=8080 docker compose -f docker-compose.web.yml up -d --build
 |:------:|:--------:|
 | ![歌词页](screenshots/vue-lyrics.png) | ![手机歌词](screenshots/vue-lyrics-mobile.png) |
 
-| 手机播放页 | 音质选择 |
-|:----------:|:--------:|
-| ![手机播放](screenshots/vue-player-mobile.png) | ![音质选择](screenshots/vue-quality.png) |
+| 手机播放页 |
+|:----------:|
+| ![手机播放](screenshots/vue-player-mobile.png) |
 
 | 设置（桌面） | 设置（手机） |
 |:----------:|:--------:|
@@ -342,6 +342,7 @@ docker compose -f docker-compose.web.yml up -d --build
 
 ### 近期更新
 
+- 播放页移除音质选择，播放控制区贴底布局，音量滑杆并入进度行
 - 播放页收藏：一键收藏 / 取消收藏到「我喜欢」，控制区改为「收藏 — 播放控件 — 循环模式」
 - 新增设置页：音质、音量、循环模式、歌词显示、搜索、动画、账号与数据管理
 - 设置页支持每日领取酷狗概念 VIP
