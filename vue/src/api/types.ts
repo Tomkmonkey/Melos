@@ -2,6 +2,7 @@ export interface Song {
   id: string
   title: string
   artist: string
+  artistId?: string
   hash: string
   albumId?: string
   albumAudioId?: string
@@ -9,6 +10,47 @@ export interface Song {
   cover?: string
   durationMs?: number
   source?: string
+}
+
+export interface ArtistSummary {
+  id: string
+  name: string
+  avatar?: string
+  songCount?: number
+  albumCount?: number
+}
+
+export interface AlbumSummary {
+  id: string
+  title: string
+  artist: string
+  artistId?: string
+  cover?: string
+  songCount?: number
+  publishDate?: string
+}
+
+export interface ArtistDetail {
+  id: string
+  name: string
+  avatar?: string
+  intro?: string
+  songCount?: number
+  albumCount?: number
+  fans?: number
+}
+
+export interface AlbumDetail {
+  id: string
+  title: string
+  artist: string
+  artistId?: string
+  cover?: string
+  intro?: string
+  type?: string
+  language?: string
+  publishDate?: string
+  songCount?: number
 }
 
 export interface Playlist {

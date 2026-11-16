@@ -102,7 +102,7 @@ function errorMessage(raw: any, text: string): string {
  *
  * - 同源 `/api` 前缀，经 Nginx 转发到会话网关；
  * - 自动携带 X-Kg-Session-Id / t1；
- * - 和 Flutter 版一致：如果响应对象含 `data` 字段，自动解包。
+ * - 响应对象含 `data` 字段时自动解包。
  */
 export async function apiRequest<T = any>(
   path: string,

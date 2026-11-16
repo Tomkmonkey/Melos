@@ -29,6 +29,20 @@ const router = createRouter({
       meta: { title: '歌单' },
     },
     {
+      path: '/artist/:id',
+      name: 'artist',
+      component: () => import('./views/ArtistView.vue'),
+      props: true,
+      meta: { title: '歌手' },
+    },
+    {
+      path: '/album/:id',
+      name: 'album',
+      component: () => import('./views/AlbumView.vue'),
+      props: true,
+      meta: { title: '专辑' },
+    },
+    {
       path: '/player',
       name: 'player',
       component: () => import('./views/PlayerView.vue'),

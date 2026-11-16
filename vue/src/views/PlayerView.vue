@@ -3,6 +3,7 @@ import { computed, nextTick, ref, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import {
   Captions,
+  Check,
   ChevronDown,
   ListMusic,
   MessageSquare,
@@ -168,6 +169,21 @@ const progress = computed(() => {
 
 const volumeProgress = computed(() => Math.round(player.volume * 100))
 
+const qualityOpen = ref(false)
+const qualityOptions = [
+  { value: '128' as const, label: '128K', title: '标准音质' },
+  { value: '320' as const, label: '320K', title: '高品音质' },
+  { value: 'flac' as const, label: 'FLAC', title: '无损音质' },
+]
+const qualityLabel = computed(() =>
+  player.quality === 'flac' ? 'FLAC' : `${player.quality}K`,
+)
+
+function chooseQuality(value: '128' | '320' | 'flac') {
+  qualityOpen.value = false
+  void player.setQuality(value)
+}
+
 const CREDIT_PATTERN =
   /^(作词|作曲|编曲|制作人|词|曲|演唱|原唱|混音|母带|吉他|贝斯|鼓|和声|录音|监制|出品|发行|OP|SP|词曲|制作|Lyricist|Composer|Arranger|Producer)\s*[：:]/i
 
@@ -261,8 +277,25 @@ function playAt(index: number) {
         />
         <h1 class="full-player-title">{{ player.current.title }}</h1>
         <p class="full-player-artist">
-          {{ player.current.artist }}
-          <template v-if="player.current.albumName"> · {{ player.current.albumName }}</template>
+          <RouterLink
+            v-if="player.current.artistId"
+            class="meta-link"
+            :to="`/artist/${player.current.artistId}`"
+          >
+            {{ player.current.artist }}
+          </RouterLink>
+          <span v-else>{{ player.current.artist }}</span>
+          <template v-if="player.current.albumName">
+            ·
+            <RouterLink
+              v-if="player.current.albumId"
+              class="meta-link"
+              :to="`/album/${player.current.albumId}`"
+            >
+              {{ player.current.albumName }}
+            </RouterLink>
+            <span v-else>{{ player.current.albumName }}</span>
+          </template>
         </p>
 
         <div class="player-controls-block">
@@ -313,7 +346,48 @@ function playAt(index: number) {
               <Repeat v-else :size="18" />
             </button>
             <span>循环：{{ player.repeat === 'one' ? '单曲' : player.repeat === 'all' ? '列表' : '关' }}</span>
-            <span style="margin-left: 10px">音质：{{ player.quality === 'flac' ? 'FLAC' : `${player.quality}K` }}</span>
+            <span class="quality-picker">
+              <button
+                class="quality-trigger"
+                type="button"
+                aria-label="选择音质"
+                :aria-expanded="qualityOpen"
+                @click.stop="qualityOpen = !qualityOpen"
+              >
+                音质
+                <strong>{{ qualityLabel }}</strong>
+                <ChevronDown :size="13" />
+              </button>
+              <span
+                v-if="qualityOpen"
+                class="menu-backdrop"
+                aria-hidden="true"
+                @click="qualityOpen = false"
+              ></span>
+              <div
+                v-if="qualityOpen"
+                class="quality-menu"
+                role="menu"
+                aria-label="音质"
+                @keydown.esc="qualityOpen = false"
+              >
+                <button
+                  v-for="option in qualityOptions"
+                  :key="option.value"
+                  class="quality-option"
+                  :class="{ active: player.quality === option.value }"
+                  type="button"
+                  role="menuitem"
+                  @click="chooseQuality(option.value)"
+                >
+                  <span class="quality-option-text">
+                    <strong>{{ option.label }}</strong>
+                    <small>{{ option.title }}</small>
+                  </span>
+                  <Check v-if="player.quality === option.value" :size="15" />
+                </button>
+              </div>
+            </span>
             <span class="player-volume" style="margin-left: auto">
               <Volume2 :size="16" />
               <input

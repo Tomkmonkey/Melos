@@ -19,35 +19,6 @@ interface QrState {
   message: string
 }
 
-const MIGRATION_KEY = 'melos.flutter-migrated'
-
-function markMigrated() {
-  try {
-    localStorage.setItem(MIGRATION_KEY, '1')
-  } catch {
-    /* 忽略 */
-  }
-}
-
-function alreadyMigrated(): boolean {
-  try {
-    return localStorage.getItem(MIGRATION_KEY) === '1'
-  } catch {
-    return false
-  }
-}
-
-function readFlutterString(key: string): string | undefined {
-  try {
-    const raw = localStorage.getItem(key)
-    if (!raw) return undefined
-    const value = JSON.parse(raw)
-    return typeof value === 'string' && value ? value : undefined
-  } catch {
-    return undefined
-  }
-}
-
 export const useAuthStore = defineStore('auth', () => {
   const session = ref<Session>(getSession())
   const profile = ref<UserProfile | null>(null)
@@ -63,21 +34,6 @@ export const useAuthStore = defineStore('auth', () => {
 
   function sync() {
     session.value = getSession()
-  }
-
-  /** 从 Flutter 版遗留的 localStorage 迁移登录态，升级后无需重新扫码。 */
-  function migrateFlutterSession(): boolean {
-    if (loggedIn.value) return false
-    if (alreadyMigrated()) return false
-    const token = readFlutterString('flutter.ka_music_token')
-    const t1 = readFlutterString('flutter.ka_music_t1')
-    const sessionId = readFlutterString('flutter.ka_music_session_id')
-    const userId = readFlutterString('flutter.ka_music_user_id')
-    if (!token && !sessionId) return false
-    setSession({ token, t1, sessionId, userId })
-    sync()
-    markMigrated()
-    return true
   }
 
   function clearLocalSession() {
@@ -114,7 +70,6 @@ export const useAuthStore = defineStore('auth', () => {
     if (initialized.value) return
     loading.value = true
     try {
-      migrateFlutterSession()
       if (loggedIn.value) {
         try {
           await refreshProfile()
@@ -207,7 +162,6 @@ export const useAuthStore = defineStore('auth', () => {
       }
       if (status === 4 && data?.token) {
         stopPolling()
-        markMigrated()
         setSession({
           token: data.token,
           userId: data.userid,
@@ -253,8 +207,6 @@ export const useAuthStore = defineStore('auth', () => {
     } catch {
       /* 即使服务端失败也清理本地状态 */
     }
-    // 标记已迁移，避免下次启动又从 Flutter 版 localStorage 恢复旧登录态。
-    markMigrated()
     clearLocalSession()
     stopQr()
   }

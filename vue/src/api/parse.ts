@@ -18,6 +18,22 @@ function int(value: unknown): number | undefined {
   return Number.isFinite(parsed) ? Math.trunc(parsed) : undefined
 }
 
+function firstArrayId(value: unknown): string | undefined {
+  if (Array.isArray(value)) {
+    for (const item of value) {
+      const id = isRecord(item)
+        ? str(item.id ?? item.author_id ?? item.singer_id)
+        : str(item)
+      if (id) return id
+    }
+    return undefined
+  }
+  if (isRecord(value)) {
+    return str(value.id ?? value.author_id ?? value.singer_id)
+  }
+  return str(value)
+}
+
 function secondsToMs(value: unknown): number | undefined {
   const parsed = typeof value === 'number' ? value : Number(str(value))
   return Number.isFinite(parsed) && parsed > 0 ? Math.round(parsed * 1000) : undefined
@@ -100,19 +116,29 @@ function stripArtistPrefix(title: string, artist: string): string {
   return title
 }
 
-/** 兼容搜索、推荐卡片、歌单三种歌曲结构。 */
+/** 兼容搜索、推荐卡片、歌单、歌手与专辑三种歌曲结构。 */
 export function parseSong(raw: Any): Song {
+  const baseInfo = isRecord(raw.base) ? raw.base : {}
+  const audioInfo = isRecord(raw.audio_info) ? raw.audio_info : {}
+  const albumInfo = isRecord(raw.albuminfo)
+    ? raw.albuminfo
+    : isRecord(raw.album_info)
+      ? raw.album_info
+      : {}
+
   let title =
     str(raw.OriSongName) ??
     str(raw.songname) ??
     str(raw.name) ??
-    str(raw.FileName) ??
+    str(baseInfo.audio_name) ??
     str(raw.audio_name) ??
+    str(raw.FileName) ??
     '未知歌曲'
   const suffix = str(raw.Suffix)
   if (str(raw.OriSongName) && suffix) title = `${title} ${suffix}`
 
   let artist = artistNames(raw).join(' / ')
+  if (!artist) artist = str(baseInfo.author_name) ?? ''
   if (artist) title = stripArtistPrefix(title, artist)
 
   if (!artist) {
@@ -125,36 +151,55 @@ export function parseSong(raw: Any): Song {
   }
   if (!artist) artist = '未知艺人'
 
-  const albumInfo = isRecord(raw.albuminfo) ? raw.albuminfo : {}
   const transParam = isRecord(raw.trans_param) ? raw.trans_param : {}
   const hash =
     str(raw.FileHash) ??
     str(raw.hash) ??
+    str(audioInfo.hash) ??
     str(raw.hash_320) ??
+    str(audioInfo.hash_320) ??
     str(raw.hash_flac) ??
+    str(audioInfo.hash_flac) ??
     ''
 
   const albumAudioId =
     str(raw.album_audio_id) ??
+    str(baseInfo.album_audio_id) ??
     str(raw.mixsongid) ??
     str(raw.MixSongID) ??
     str(raw.songid) ??
     str(raw.audio_id)
 
+  const artistId =
+    str(raw.artist_id ?? raw.artistId ?? raw.author_id ?? raw.authorId) ??
+    str(raw.singerid ?? raw.singer_id) ??
+    firstArrayId(raw.Singers ?? raw.singers) ??
+    firstArrayId(raw.authors) ??
+    firstArrayId(raw.SingerId)
+
   return {
     id:
       str(raw.MixSongID) ??
       str(raw.mixsongid) ??
+      str(baseInfo.audio_id) ??
       str(raw.songid) ??
       str(raw.audio_id) ??
       str(raw.fileid) ??
       hash,
     title,
     artist,
+    artistId,
     hash,
-    albumId: str(raw.AlbumID) ?? str(raw.album_id) ?? str(albumInfo.album_id),
+    albumId:
+      str(raw.AlbumID) ??
+      str(raw.album_id) ??
+      str(baseInfo.album_id) ??
+      str(albumInfo.album_id),
     albumAudioId,
-    albumName: str(raw.AlbumName) ?? str(raw.album_name) ?? str(albumInfo.album_name),
+    albumName:
+      str(raw.AlbumName) ??
+      str(raw.album_name) ??
+      str(albumInfo.album_name),
     cover: imageUrl(
       raw.Image ??
         raw.sizable_cover ??
@@ -168,6 +213,8 @@ export function parseSong(raw: Any): Song {
     durationMs:
       secondsToMs(raw.time_length) ??
       secondsToMs(raw.Duration) ??
+      int(raw.timelength) ??
+      int(audioInfo.duration) ??
       int(raw.timelen) ??
       secondsToMs(raw.duration),
     source: 'kugou',
@@ -207,6 +254,7 @@ export function parsePlaylist(raw: Any): Playlist | null {
   const id =
     str(raw.list_create_gid) ??
     str(raw.global_collection_id) ??
+    str(raw.gid) ??
     str(raw.specialid) ??
     str(raw.listid)
   if (!id) return null
@@ -215,7 +263,7 @@ export function parsePlaylist(raw: Any): Playlist | null {
     title: str(raw.name) ?? str(raw.specialname) ?? str(raw.title) ?? '未命名歌单',
     cover: imageUrl(raw.pic ?? raw.flexible_cover ?? raw.cover ?? raw.img),
     songCount: int(raw.count ?? raw.song_count),
-    playCount: int(raw.play_count ?? raw.heat),
+    playCount: int(raw.play_count ?? raw.total_play_count ?? raw.heat),
     creator: str(raw.list_create_username) ?? str(raw.nickname),
     description: str(raw.intro) ?? str(raw.desc),
   }

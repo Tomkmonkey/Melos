@@ -2,13 +2,16 @@
 import { onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { Play, Search, X } from 'lucide-vue-next'
+import PlaylistCard from '../components/PlaylistCard.vue'
 import SongList from '../components/SongList.vue'
 import { apiGet } from '../api/client'
-import { parseSongList } from '../api/parse'
-import type { Song } from '../api/types'
+import { parsePlaylists, parseSongList } from '../api/parse'
+import type { Playlist, Song } from '../api/types'
 import { usePlayerStore } from '../stores/player'
 
 defineOptions({ name: 'SearchView' })
+
+type SearchMode = 'song' | 'special'
 
 const route = useRoute()
 const router = useRouter()
@@ -18,7 +21,9 @@ const RECENT_KEY = 'melos.search.recent'
 const FALLBACK_HOT = ['周杰伦', '林俊杰', 'Taylor Swift', '纯音乐', '粤语', '摇滚']
 
 const keyword = ref(typeof route.query.q === 'string' ? route.query.q : '')
+const searchMode = ref<SearchMode>('song')
 const songs = ref<Song[]>([])
+const playlists = ref<Playlist[]>([])
 const total = ref(0)
 const searching = ref(false)
 const searched = ref(false)
@@ -32,6 +37,7 @@ const searchInput = ref<HTMLInputElement | null>(null)
 
 let suggestTimer: number | undefined
 let suggestSerial = 0
+let searchSerial = 0
 let lastSearched = ''
 let blurTimer: number | undefined
 
@@ -156,6 +162,8 @@ function hideSuggestSoon() {
 async function search(value?: string) {
   const query = (value ?? keyword.value).trim()
   if (!query) return
+  const serial = ++searchSerial
+  const mode = searchMode.value
   keyword.value = query
   lastSearched = query
   window.clearTimeout(suggestTimer)
@@ -169,25 +177,54 @@ async function search(value?: string) {
   error.value = ''
   remember(query)
   try {
-    const data = await apiGet<any>('/search', {
-      keywords: query,
-      page: 1,
-      pagesize: 50,
-      type: 'song',
-    })
-    const lists = Array.isArray(data) ? data : (data?.lists ?? data?.songs ?? [])
-    songs.value = parseSongList(lists)
-    total.value = Number(data?.total ?? songs.value.length) || songs.value.length
+    if (mode === 'song') {
+      const data = await apiGet<any>('/search', {
+        keywords: query,
+        page: 1,
+        pagesize: 50,
+        type: 'song',
+      })
+      if (serial !== searchSerial) return
+      const lists = Array.isArray(data) ? data : (data?.lists ?? data?.songs ?? [])
+      songs.value = parseSongList(lists)
+      playlists.value = []
+      total.value = Number(data?.total ?? songs.value.length) || songs.value.length
+    } else {
+      const data = await apiGet<any>('/search', {
+        keywords: query,
+        page: 1,
+        pagesize: 30,
+        type: 'special',
+      })
+      if (serial !== searchSerial) return
+      playlists.value = parsePlaylists(data?.lists ?? data)
+      songs.value = []
+      total.value = Number(data?.total ?? playlists.value.length) || playlists.value.length
+    }
     if (route.query.q !== query) {
       void router.replace({ query: { ...route.query, q: query } })
     }
   } catch (err) {
+    if (serial !== searchSerial) return
     songs.value = []
+    playlists.value = []
     total.value = 0
     error.value = (err as Error).message || '搜索失败，请稍后重试'
   } finally {
-    searching.value = false
+    if (serial === searchSerial) searching.value = false
   }
+}
+
+function switchMode(next: SearchMode) {
+  if (searchMode.value === next) return
+  searchMode.value = next
+  searchSerial++
+  songs.value = []
+  playlists.value = []
+  total.value = 0
+  error.value = ''
+  searching.value = false
+  if (searched.value && keyword.value.trim()) void search(keyword.value)
 }
 
 function pickSuggestion(value: string) {
@@ -196,11 +233,14 @@ function pickSuggestion(value: string) {
 }
 
 function clear() {
+  searchSerial++
+  searching.value = false
   keyword.value = ''
   lastSearched = ''
   suggestions.value = []
   suggestVisible.value = false
   songs.value = []
+  playlists.value = []
   total.value = 0
   searched.value = false
   error.value = ''
@@ -304,6 +344,27 @@ onBeforeUnmount(() => {
       </div>
     </div>
 
+    <div class="search-types" role="tablist" aria-label="搜索类型">
+      <button
+        type="button"
+        role="tab"
+        :aria-selected="searchMode === 'song'"
+        :class="{ active: searchMode === 'song' }"
+        @click="switchMode('song')"
+      >
+        单曲
+      </button>
+      <button
+        type="button"
+        role="tab"
+        :aria-selected="searchMode === 'special'"
+        :class="{ active: searchMode === 'special' }"
+        @click="switchMode('special')"
+      >
+        歌单
+      </button>
+    </div>
+
     <div v-if="!searched" class="section">
       <div v-if="recent.length" class="section-head">
         <h2 class="section-title">最近搜索</h2>
@@ -340,12 +401,18 @@ onBeforeUnmount(() => {
       <div class="section-head">
         <div>
           <h2 class="section-title">
-            {{ searching ? '搜索中…' : `找到 ${total || songs.length} 首歌曲` }}
+            {{
+              searching
+                ? '搜索中…'
+                : searchMode === 'song'
+                  ? `找到 ${total || songs.length} 首歌曲`
+                  : `找到 ${total || playlists.length} 个歌单`
+            }}
           </h2>
           <p v-if="keyword" class="section-desc">关键词：{{ keyword }}</p>
         </div>
         <button
-          v-if="songs.length"
+          v-if="searchMode === 'song' && songs.length"
           class="btn btn-primary btn-sm"
           type="button"
           @click="playAll"
@@ -355,31 +422,56 @@ onBeforeUnmount(() => {
         </button>
       </div>
 
-      <div v-if="searching" class="song-list">
-        <div v-for="i in 6" :key="i" class="skeleton-row">
-          <div class="skeleton skeleton-cover"></div>
-          <div class="skeleton-lines" style="flex: 1">
-            <div class="skeleton skeleton-line" style="width: 52%"></div>
-            <div class="skeleton skeleton-line" style="width: 30%"></div>
+      <template v-if="searching">
+        <div v-if="searchMode === 'song'" class="song-list">
+          <div v-for="i in 6" :key="i" class="skeleton-row">
+            <div class="skeleton skeleton-cover"></div>
+            <div class="skeleton-lines" style="flex: 1">
+              <div class="skeleton skeleton-line" style="width: 52%"></div>
+              <div class="skeleton skeleton-line" style="width: 30%"></div>
+            </div>
           </div>
         </div>
-      </div>
+        <div v-else class="playlist-grid">
+          <div v-for="i in 6" :key="i" class="playlist-skeleton">
+            <div class="skeleton" style="aspect-ratio: 1; border-radius: var(--radius)"></div>
+            <div class="skeleton skeleton-line" style="width: 82%; margin-top: 10px"></div>
+            <div class="skeleton skeleton-line" style="width: 50%; margin-top: 6px"></div>
+          </div>
+        </div>
+      </template>
 
       <div v-else-if="error" class="error-box">{{ error }}</div>
 
-      <div v-else-if="songs.length" class="card" style="padding: 8px">
-        <SongList
-          :songs="songs"
-          :active-hash="player.current?.hash"
-          @play="play"
-        />
-      </div>
+      <template v-else-if="searchMode === 'song'">
+        <div v-if="songs.length" class="card" style="padding: 8px">
+          <SongList
+            :songs="songs"
+            :active-hash="player.current?.hash"
+            @play="play"
+          />
+        </div>
+        <div v-else class="empty-state">
+          <Search :size="34" />
+          <h3>没有找到歌曲</h3>
+          <p>换一个关键词试试，或检查网络后重试。</p>
+        </div>
+      </template>
 
-      <div v-else class="empty-state">
-        <Search :size="34" />
-        <h3>没有找到歌曲</h3>
-        <p>换一个关键词试试，或检查网络后重试。</p>
-      </div>
+      <template v-else>
+        <div v-if="playlists.length" class="playlist-grid">
+          <PlaylistCard
+            v-for="playlist in playlists"
+            :key="playlist.id"
+            :playlist="playlist"
+          />
+        </div>
+        <div v-else class="empty-state">
+          <Search :size="34" />
+          <h3>没有找到歌单</h3>
+          <p>换一个关键词试试，或检查网络后重试。</p>
+        </div>
+      </template>
     </div>
   </div>
 </template>

@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { onMounted, onUnmounted, ref, watch } from 'vue'
 import { Heart, MessageSquare, X } from 'lucide-vue-next'
+import ImageViewer from './ImageViewer.vue'
 import {
   fetchComments,
   fetchReplies,
@@ -27,6 +28,8 @@ const error = ref('')
 const expandedId = ref('')
 const replies = ref<Record<string, CommentItem[]>>({})
 const repliesLoading = ref('')
+const viewerImages = ref<string[]>([])
+const viewerIndex = ref(0)
 
 async function load(reset = true) {
   if (reset) {
@@ -90,8 +93,18 @@ function close() {
   emit('close')
 }
 
+function openViewer(images: string[], index: number) {
+  viewerImages.value = images
+  viewerIndex.value = index
+}
+
+function closeViewer() {
+  viewerImages.value = []
+}
+
 function onKeydown(event: KeyboardEvent) {
-  if (event.key === 'Escape') close()
+  if (event.key !== 'Escape' || viewerImages.value.length) return
+  close()
 }
 
 watch(
@@ -197,15 +210,16 @@ onUnmounted(() => {
                 <p class="comment-content">{{ comment.content }}</p>
 
                 <div v-if="comment.images.length" class="comment-images">
-                  <a
+                  <button
                     v-for="(image, index) in comment.images"
                     :key="index"
-                    :href="image"
-                    target="_blank"
-                    rel="noreferrer"
+                    class="comment-image-button"
+                    type="button"
+                    :aria-label="`查看图片 ${index + 1}`"
+                    @click="openViewer(comment.images, index)"
                   >
                     <img :src="image" alt="" loading="lazy" />
-                  </a>
+                  </button>
                 </div>
 
                 <div class="comment-actions">
@@ -254,5 +268,12 @@ onUnmounted(() => {
         </div>
       </aside>
     </div>
+
+    <ImageViewer
+      v-if="viewerImages.length"
+      :images="viewerImages"
+      :start-index="viewerIndex"
+      @close="closeViewer"
+    />
   </Teleport>
 </template>

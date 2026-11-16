@@ -201,14 +201,20 @@ export const usePlayerStore = defineStore('player', () => {
     audio.pause()
 
     try {
+      const order: Quality[] =
+        quality.value === 'flac'
+          ? ['flac', '320', '128']
+          : quality.value === '320'
+            ? ['320', '128']
+            : ['128']
       let url = ''
-      try {
-        url = await resolveSongUrl(song, quality.value)
-      } catch {
-        url = ''
-      }
-      if (!url) {
-        url = await resolveSongUrl(song, '128').catch(() => '')
+      for (const target of order) {
+        try {
+          url = await resolveSongUrl(song, target)
+        } catch {
+          url = ''
+        }
+        if (url) break
       }
       if (serial !== requestSerial) return
       if (!url) {
@@ -351,10 +357,25 @@ export const usePlayerStore = defineStore('player', () => {
     persist(true)
   }
 
-  function setQuality(value: Quality) {
+  async function setQuality(value: Quality) {
+    if (value === quality.value) return
     quality.value = value
     persist(true)
-    if (current.value) void loadAndPlay(index.value)
+    if (!current.value) return
+
+    const resume = positionMs.value
+    const shouldPlay = !audio.paused || loading.value
+    audio.pause()
+    hasSource.value = false
+    audio.removeAttribute('src')
+    audio.load()
+
+    if (shouldPlay) {
+      await loadAndPlay(index.value, resume)
+    } else {
+      positionMs.value = resume
+      restorePosition = resume
+    }
   }
 
   function cycleRepeat() {
