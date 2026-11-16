@@ -23,6 +23,11 @@ const creator = ref('')
 const songCount = ref(0)
 const loading = ref(true)
 const error = ref('')
+const page = ref(1)
+const hasMore = ref(false)
+const loadingMore = ref(false)
+
+const PAGE_SIZE = 200
 
 const countLabel = computed(() =>
   songCount.value ? `${songCount.value} 首歌曲` : `${songs.value.length} 首歌曲`,
@@ -32,14 +37,23 @@ function normalizeId(value: string): string {
   return /^\d+_\d+_\d+_\d+$/.test(value) ? `collection_${value}` : value
 }
 
+function rawTrackItems(data: any): unknown[] {
+  if (Array.isArray(data?.songs)) return data.songs
+  if (Array.isArray(data?.lists)) return data.lists
+  return Array.isArray(data) ? data : []
+}
+
 async function load() {
   loading.value = true
   error.value = ''
+  page.value = 1
+  hasMore.value = false
+  loadingMore.value = false
   const id = normalizeId(props.id)
   try {
     const [detailResult, tracksResult] = await Promise.allSettled([
       apiGet<any>('/playlist/detail', { ids: id }),
-      apiGet<any>('/playlist/track/all', { id, page: 1, pagesize: 200 }),
+      apiGet<any>('/playlist/track/all', { id, page: 1, pagesize: PAGE_SIZE }),
     ])
 
     if (detailResult.status === 'fulfilled') {
@@ -52,17 +66,54 @@ async function load() {
     }
 
     if (tracksResult.status === 'fulfilled') {
-      const data = tracksResult.value ?? {}
-      songs.value = parseSongList(data.songs ?? data.lists ?? data)
+      const data = tracksResult.value
+      const items = rawTrackItems(data)
+      songs.value = parseSongList(items)
+      const total = Number(data?.count ?? 0) || 0
+      if (!songCount.value && total) songCount.value = total
       if (!songCount.value) songCount.value = songs.value.length
+      hasMore.value =
+        items.length >= PAGE_SIZE &&
+        (!songCount.value || songs.value.length < songCount.value)
     } else {
       throw tracksResult.reason
     }
   } catch (err) {
     error.value = (err as Error).message || '歌单加载失败'
     songs.value = []
+    hasMore.value = false
   } finally {
     loading.value = false
+  }
+}
+
+async function loadMore() {
+  if (loadingMore.value || !hasMore.value || loading.value) return
+  loadingMore.value = true
+  const nextPage = page.value + 1
+  try {
+    const data = await apiGet<any>('/playlist/track/all', {
+      id: normalizeId(props.id),
+      page: nextPage,
+      pagesize: PAGE_SIZE,
+    })
+    const items = rawTrackItems(data)
+    const more = parseSongList(items)
+    const known = new Set(songs.value.map((song) => `${song.hash}|${song.id}`))
+    const fresh = more.filter((song) => !known.has(`${song.hash}|${song.id}`))
+    if (fresh.length) songs.value = [...songs.value, ...fresh]
+    page.value = nextPage
+    const total = Number(data?.count ?? 0) || 0
+    if (total) songCount.value = total
+    hasMore.value =
+      items.length >= PAGE_SIZE &&
+      fresh.length > 0 &&
+      (!songCount.value || songs.value.length < songCount.value)
+  } catch {
+    // 下一页失败时停止自动加载，已加载的歌曲保留。
+    hasMore.value = false
+  } finally {
+    loadingMore.value = false
   }
 }
 
@@ -142,7 +193,10 @@ watch(
           <SongList
             :songs="songs"
             :active-hash="player.current?.hash"
+            :has-more="hasMore"
+            :loading-more="loadingMore"
             @play="play"
+            @load-more="loadMore"
           />
         </div>
         <div v-else class="empty-state">

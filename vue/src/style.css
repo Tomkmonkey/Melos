@@ -888,6 +888,20 @@ input {
   flex-direction: column;
 }
 
+.song-list-sentinel {
+  height: 1px;
+}
+
+.song-list-loading {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-2);
+  padding: var(--space-4);
+  color: var(--text-faint);
+  font-size: 12px;
+}
+
 .song-row {
   display: flex;
   align-items: center;
