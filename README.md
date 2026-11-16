@@ -132,7 +132,7 @@ MELOS_WEB_PORT=8080 docker compose -f docker-compose.web.yml up -d --build
 
 ### 🎤 歌词
 
-- KRC 优先：逐字高亮、翻译与音译（LRC 逐行同步与同行翻译兜底）
+- KRC / LRC 行级歌词、翻译与音译（LRC 同行翻译合并兜底）
 - 桌面端：封面在左，歌词固定在右侧
 - 移动端：向右滑进入歌词，向左滑返回封面；也可点右上角歌词图标或「查看歌词」
 
@@ -239,7 +239,7 @@ MELOS_WEB_PORT=8080 docker compose -f docker-compose.web.yml up -d --build
   - 使用 CSS Grid/Flex 与安全区适配，无固定宽度依赖。
 - **音频**：HTML5 Audio + `/api/audio-proxy`（Range / 206），支持拖动进度；
   使用 Media Session 接入锁屏与系统媒体控制。
-- **歌词**：`/search/lyric` + `/lyric`，KRC 逐字 / 翻译 / 音译优先，LRC 行级同步兜底，自动滚动。
+- **歌词**：`/search/lyric` + `/lyric`，KRC / LRC 行级歌词、翻译 / 音译优先，自动滚动。
 - **评论**：`/api/comment-proxy` 转发热门 / 最新与楼层回复，评论图片走音频代理。
 - **登录态迁移**：启动时读取 Flutter 版留下的 `flutter.ka_music_*` localStorage，
   自动恢复登录，无需重新扫码。
@@ -447,7 +447,7 @@ docker compose -f docker-compose.web.yml up -d --build
 - **纯白极简 UI**，使用新的 M 音符图标与白色 PWA 主题
 - 响应式布局：桌面侧栏 / 手机底部导航
 - 播放页：桌面歌词在封面右侧；手机向右滑看歌词、向左滑返回
-- KRC 逐字歌词、翻译与音译；播放页约 30fps 刷新
+- KRC / LRC 行级歌词、翻译与音译
 - 搜索建议与真实热搜词；发现页右上角头像 + 在线绿点
 - 发现 / 搜索 / 歌单页 KeepAlive 缓存，返回不重新加载
 - HTML5 Audio、队列与进度持久化、Media Session

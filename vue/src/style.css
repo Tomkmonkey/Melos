@@ -1372,24 +1372,6 @@ input[type='range'] {
   font-weight: 600;
 }
 
-.lyric-line.active.has-words .lyric-text {
-  color: #d4d4d4;
-  font-weight: 500;
-}
-
-.lyric-word {
-  color: inherit;
-}
-
-.lyric-word.sung {
-  color: var(--text);
-}
-
-.lyric-word.current {
-  color: var(--text);
-  font-weight: 650;
-}
-
 .lyric-translation {
   margin-top: 2px;
   color: var(--text-faint);

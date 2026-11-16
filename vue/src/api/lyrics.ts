@@ -1,19 +1,12 @@
 import { apiGet } from './client'
 import type { Song } from './types'
 
-export interface LyricWord {
-  text: string
-  timeMs: number
-  durationMs: number
-}
-
 export interface LyricLine {
   timeMs: number
   durationMs: number
   text: string
   translation?: string
   romanization?: string
-  words: LyricWord[]
 }
 
 interface Variants {
@@ -179,21 +172,15 @@ function mergeVariants(lines: LyricLine[], variants: Variants): void {
   }
 }
 
-function trimWords(words: LyricWord[]): LyricWord[] {
-  while (words.length && !words[0].text.trim()) words.shift()
-  while (words.length && !words[words.length - 1].text.trim()) words.pop()
-  if (words.length) {
-    const last = words[words.length - 1]
-    last.text = last.text.trimEnd()
-  }
-  return words
+function normalizeText(text: string): string {
+  return text.replace(/\s+/g, ' ').trim()
 }
 
 export function parseKrc(content: string): LyricLine[] {
   if (!content.trim()) return []
   const offset = extractOffset(content)
   const lineExpression = /^\[\s*(-?\d+)\s*,\s*(-?\d+)\s*\](.*)$/
-  const wordExpression = /<\s*(-?\d+)\s*,\s*(-?\d+)\s*,\s*(-?\d+)\s*>/g
+  const wordExpression = /<\s*-?\d+\s*,\s*-?\d+\s*,\s*-?\d+\s*>/g
   const lines: LyricLine[] = []
 
   for (const rawLine of content.split(/\r?\n/)) {
@@ -201,33 +188,12 @@ export function parseKrc(content: string): LyricLine[] {
     if (!match) continue
     const start = Number(match[1])
     const duration = Number(match[2])
-    const body = match[3] ?? ''
-    const words: LyricWord[] = []
-    const wordMatches = [...body.matchAll(wordExpression)]
-    for (let i = 0; i < wordMatches.length; i++) {
-      const wordMatch = wordMatches[i]
-      const wordStart = Number(wordMatch[1])
-      const wordDuration = Number(wordMatch[2])
-      const end = i + 1 < wordMatches.length ? wordMatches[i + 1].index : body.length
-      const text = body.slice((wordMatch.index ?? 0) + wordMatch[0].length, end)
-      if (!text) continue
-      words.push({
-        text,
-        timeMs: Math.max(0, start + wordStart + offset),
-        durationMs: Math.max(0, wordDuration),
-      })
-    }
-
-    const displayWords = trimWords(words)
-    const text = displayWords.length
-      ? displayWords.map((word) => word.text).join('')
-      : body.replace(wordExpression, '').trim()
-    if (!text.trim()) continue
+    const text = normalizeText((match[3] ?? '').replace(wordExpression, ''))
+    if (!text) continue
     lines.push({
       timeMs: Math.max(0, start + offset),
       durationMs: Math.max(0, duration),
       text,
-      words: displayWords,
     })
   }
 
@@ -261,7 +227,6 @@ export function parseLrc(content: string): LyricLine[] {
         ),
         durationMs: 0,
         text,
-        words: [],
       })
     }
   }
@@ -318,7 +283,7 @@ async function fetchContent(
 }
 
 /**
- * 歌词加载：优先 KRC（逐字 + language 标签内的翻译/音译），
+ * 歌词加载：优先 KRC（行级时间轴 + language 标签内的翻译/音译），
  * 再退回 LRC（支持同行翻译与 decodedTranslation）。
  */
 export async function fetchLyrics(song: Song): Promise<LyricLine[]> {

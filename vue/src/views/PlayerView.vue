@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue'
+import { computed, nextTick, ref, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import {
   Captions,
@@ -77,14 +77,6 @@ watch(
   },
   { immediate: true },
 )
-
-onMounted(() => {
-  player.startSmoothProgress()
-})
-
-onBeforeUnmount(() => {
-  player.stopSmoothProgress()
-})
 
 async function scrollActiveLyric() {
   await nextTick()
@@ -389,27 +381,9 @@ function playAt(index: number) {
               :key="`${line.timeMs}-${index}`"
               :data-line="index"
               class="lyric-line"
-              :class="{
-                active: index === activeLyricIndex,
-                'has-words': index === activeLyricIndex && line.words.length > 0,
-              }"
+              :class="{ active: index === activeLyricIndex }"
             >
-              <div class="lyric-text">
-                <template v-if="index === activeLyricIndex && line.words.length">
-                  <span
-                    v-for="(word, wordIndex) in line.words"
-                    :key="wordIndex"
-                    class="lyric-word"
-                    :class="{
-                      sung: player.positionMs >= word.timeMs,
-                      current:
-                        player.positionMs >= word.timeMs &&
-                        player.positionMs < word.timeMs + word.durationMs,
-                    }"
-                  >{{ word.text }}</span>
-                </template>
-                <template v-else>{{ line.text }}</template>
-              </div>
+              <div class="lyric-text">{{ line.text }}</div>
               <div v-if="line.translation" class="lyric-translation">
                 {{ line.translation }}
               </div>
