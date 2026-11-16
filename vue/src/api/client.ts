@@ -67,6 +67,8 @@ export interface RequestOptions {
   sessionId?: string
   /** 是否把响应头里的 X-Kg-Session-Id 写回当前会话，默认 true。 */
   updateSession?: boolean
+  /** 请求超时或页面离开时用来中断本次请求。 */
+  signal?: AbortSignal
 }
 
 function unwrap(json: any): any {
@@ -134,6 +136,7 @@ export async function apiRequest<T = any>(
       method: options.method ?? 'GET',
       headers,
       body,
+      signal: options.signal,
     })
   } catch (error) {
     throw new ApiError(`网络请求失败：${(error as Error).message}`)

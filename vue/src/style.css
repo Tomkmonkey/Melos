@@ -1392,6 +1392,43 @@ input[type='range'] {
   padding: var(--space-2) 0;
 }
 
+.player-controls-row {
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  align-items: center;
+  gap: var(--space-3);
+  width: 100%;
+}
+
+.player-controls-row > .icon-btn {
+  width: 40px;
+  height: 40px;
+}
+
+.player-controls-row .player-favorite {
+  justify-self: start;
+}
+
+.player-controls-row .player-repeat {
+  justify-self: end;
+}
+
+.player-favorite.active {
+  color: var(--text);
+}
+
+.player-controls-row > .icon-btn:disabled {
+  cursor: default;
+  opacity: 0.55;
+}
+
+.player-action-error {
+  margin: 0;
+  color: var(--danger);
+  font-size: 12px;
+  text-align: center;
+}
+
 .player-buttons .icon-btn {
   width: 42px;
   height: 42px;

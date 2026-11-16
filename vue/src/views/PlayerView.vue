@@ -6,6 +6,7 @@ import {
   Captions,
   Check,
   ChevronDown,
+  Heart,
   ListMusic,
   MessageSquare,
   Pause,
@@ -20,6 +21,8 @@ import CoverImage from '../components/CoverImage.vue'
 import CommentsPanel from '../components/CommentsPanel.vue'
 import SongList from '../components/SongList.vue'
 import type { LyricLine } from '../api/lyrics'
+import { useAuthStore } from '../stores/auth'
+import { useFavoritesStore } from '../stores/favorites'
 import { useLyricsStore } from '../stores/lyrics'
 import { usePlayerStore } from '../stores/player'
 import { useSettingsStore } from '../stores/settings'
@@ -27,6 +30,8 @@ import { formatSeconds } from '../utils'
 
 const player = usePlayerStore()
 const settings = useSettingsStore()
+const auth = useAuthStore()
+const favorites = useFavoritesStore()
 const lyricsStore = useLyricsStore()
 const {
   lines: lyrics,
@@ -186,6 +191,40 @@ const currentArtists = computed(() => {
   return [{ name: song.artist }]
 })
 
+const favoriteActive = computed(() => favorites.isFavorite(player.current))
+const favoritePending = computed(() => favorites.isPending(player.current))
+const favoriteDisabled = computed(
+  () => !!favorites.pendingHash || (!favorites.ready && favorites.loading),
+)
+const favoriteLabel = computed(() => {
+  if (!auth.loggedIn) return '登录后可收藏'
+  if (favoritePending.value) return '正在更新收藏'
+  if (!favorites.ready && favorites.loading) return '正在加载收藏'
+  if (favorites.error && !favorites.ready) return '收藏暂不可用，点击重试'
+  return favoriteActive.value ? '取消收藏' : '收藏到“我喜欢”'
+})
+
+const repeatLabel = computed(
+  () =>
+    `循环模式：${player.repeat === 'one' ? '单曲' : player.repeat === 'all' ? '列表' : '关'}`,
+)
+
+function toggleFavorite() {
+  if (!auth.loggedIn) {
+    void router.push('/login')
+    return
+  }
+  if (player.current) void favorites.toggle(player.current)
+}
+
+watch(
+  () => [auth.initialized, auth.loggedIn] as const,
+  ([initialized, loggedIn]) => {
+    if (initialized && loggedIn) void favorites.load()
+  },
+  { immediate: true },
+)
+
 const qualityOpen = ref(false)
 const qualityOptions = [
   { value: '128' as const, label: '128K', title: '标准音质' },
@@ -342,37 +381,62 @@ function playAt(index: number) {
             <span>{{ formatSeconds(player.durationMs / 1000) }}</span>
           </div>
 
-          <div class="player-buttons">
-            <button class="icon-btn" type="button" aria-label="上一首" @click="player.previous()">
-              <SkipBack :size="22" />
-            </button>
+          <div class="player-controls-row">
             <button
-              class="icon-btn play-big"
+              class="icon-btn player-favorite"
               type="button"
-              :aria-label="player.playing ? '暂停' : '播放'"
-              @click="player.toggle()"
+              :class="{ active: favoriteActive }"
+              :aria-label="favoriteLabel"
+              :aria-pressed="favoriteActive"
+              :title="favoriteLabel"
+              :disabled="favoriteDisabled"
+              @click="toggleFavorite"
             >
-              <span v-if="player.loading" class="spinner"></span>
-              <Pause v-else-if="player.playing" :size="26" />
-              <Play v-else :size="26" />
+              <span v-if="favoritePending" class="spinner"></span>
+              <Heart
+                v-else
+                :size="20"
+                :fill="favoriteActive ? 'currentColor' : 'none'"
+              />
             </button>
-            <button class="icon-btn" type="button" aria-label="下一首" @click="player.next()">
-              <SkipForward :size="22" />
-            </button>
-          </div>
 
-          <div class="player-extra">
+            <div class="player-buttons">
+              <button class="icon-btn" type="button" aria-label="上一首" @click="player.previous()">
+                <SkipBack :size="22" />
+              </button>
+              <button
+                class="icon-btn play-big"
+                type="button"
+                :aria-label="player.playing ? '暂停' : '播放'"
+                @click="player.toggle()"
+              >
+                <span v-if="player.loading" class="spinner"></span>
+                <Pause v-else-if="player.playing" :size="26" />
+                <Play v-else :size="26" />
+              </button>
+              <button class="icon-btn" type="button" aria-label="下一首" @click="player.next()">
+                <SkipForward :size="22" />
+              </button>
+            </div>
+
             <button
-              class="icon-btn"
+              class="icon-btn player-repeat"
               type="button"
-              :aria-label="`循环模式：${player.repeat}`"
+              :aria-label="repeatLabel"
+              :title="repeatLabel"
               :class="{ active: player.repeat !== 'off' }"
               @click="player.cycleRepeat()"
             >
-              <Repeat1 v-if="player.repeat === 'one'" :size="18" />
-              <Repeat v-else :size="18" />
+              <Repeat1 v-if="player.repeat === 'one'" :size="20" />
+              <Repeat v-else :size="20" />
             </button>
-            <span>循环：{{ player.repeat === 'one' ? '单曲' : player.repeat === 'all' ? '列表' : '关' }}</span>
+          </div>
+
+          <p v-if="favorites.actionError" class="player-action-error">
+            {{ favorites.actionError }}
+          </p>
+
+          <div class="player-extra">
             <span class="quality-picker">
               <button
                 class="quality-trigger"
