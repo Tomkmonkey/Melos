@@ -64,6 +64,12 @@ export const usePlayerStore = defineStore('player', () => {
   let requestSerial = 0
   let restorePosition = positionMs.value
   let lastPersisted = 0
+  let prefetched: { index: number; hash: string; quality: Quality; url: string } | null = null
+  let prefetchSerial = 0
+  let prefetchTimer: number | undefined
+  let endedHandled = false
+  let endedResetTimer: number | undefined
+  let ignoreEndedUntil = 0
 
   audio.volume = volume.value
 
@@ -111,6 +117,16 @@ export const usePlayerStore = defineStore('player', () => {
   audio.addEventListener('timeupdate', () => {
     positionMs.value = Math.round(audio.currentTime * 1000)
     persist()
+    const duration = audio.duration
+    if (
+      !endedHandled &&
+      !audio.paused &&
+      Number.isFinite(duration) &&
+      duration > 0 &&
+      audio.currentTime >= duration - 0.05
+    ) {
+      handleEndedOnce()
+    }
   })
   audio.addEventListener('durationchange', () => {
     if (Number.isFinite(audio.duration)) {
@@ -126,7 +142,7 @@ export const usePlayerStore = defineStore('player', () => {
     persist(true)
   })
   audio.addEventListener('ended', () => {
-    void handleEnded()
+    handleEndedOnce()
   })
   audio.addEventListener('error', () => {
     if (hasSource.value) {
@@ -138,7 +154,12 @@ export const usePlayerStore = defineStore('player', () => {
   const persistOnHide = () => persist(true)
   window.addEventListener('pagehide', persistOnHide)
   document.addEventListener('visibilitychange', () => {
-    if (document.visibilityState === 'hidden') persist(true)
+    if (document.visibilityState === 'hidden') {
+      persist(true)
+      return
+    }
+    // iOS PWA 在后台可能丢失 ended 事件，回到前台时补一次。
+    if (hasSource.value && audio.ended) handleEndedOnce()
   })
 
   async function resolveSongUrl(song: Song, targetQuality: Quality): Promise<string> {
@@ -155,6 +176,147 @@ export const usePlayerStore = defineStore('player', () => {
     if (typeof data?.url === 'string') return data.url
     if (Array.isArray(data?.url) && typeof data.url[0] === 'string') return data.url[0]
     return ''
+  }
+
+  async function resolvePlayableUrl(song: Song): Promise<string> {
+    const order: Quality[] =
+      quality.value === 'flac'
+        ? ['flac', '320', '128']
+        : quality.value === '320'
+          ? ['320', '128']
+          : ['128']
+    for (const target of order) {
+      try {
+        const url = await resolveSongUrl(song, target)
+        if (url) return url
+      } catch {
+        /* 尝试下一档音质 */
+      }
+    }
+    return ''
+  }
+
+  function nextQueueIndex(): number | null {
+    if (!queue.value.length) return null
+    if (repeat.value === 'one') return index.value
+    if (index.value + 1 < queue.value.length) return index.value + 1
+    if (repeat.value === 'all') return 0
+    return null
+  }
+
+  function invalidatePrefetch() {
+    prefetchSerial++
+    prefetched = null
+    if (prefetchTimer !== undefined) {
+      window.clearTimeout(prefetchTimer)
+      prefetchTimer = undefined
+    }
+  }
+
+  /**
+   * 提前解析下一首播放地址。iOS PWA 在歌曲结束后再发网络请求容易被暂停，
+   * 提前拿到 URL 后可以在 ended 事件里直接调用 play()。
+   */
+  function schedulePrefetch() {
+    const target = nextQueueIndex()
+    if (target === null || target === index.value) {
+      invalidatePrefetch()
+      return
+    }
+    const song = queue.value[target]
+    if (!song?.hash) {
+      invalidatePrefetch()
+      return
+    }
+    if (
+      prefetched &&
+      prefetched.index === target &&
+      prefetched.hash === song.hash &&
+      prefetched.quality === quality.value
+    ) {
+      return
+    }
+
+    invalidatePrefetch()
+    const serial = prefetchSerial
+    const expectedQuality = quality.value
+    prefetchTimer = window.setTimeout(async () => {
+      prefetchTimer = undefined
+      try {
+        const url = await resolvePlayableUrl(song)
+        if (serial !== prefetchSerial || quality.value !== expectedQuality) return
+        if (url) {
+          prefetched = { index: target, hash: song.hash, quality: expectedQuality, url }
+        }
+      } catch {
+        /* 预取失败时仍在切歌时实时解析 */
+      }
+    }, 600)
+  }
+
+  /** 在 ended 事件中同步启动下一首，避免异步等待导致 iOS 阻止自动播放。 */
+  function playPrefetched(targetIndex: number): boolean {
+    const item = prefetched
+    const song = queue.value[targetIndex]
+    if (
+      !item ||
+      !song ||
+      item.index !== targetIndex ||
+      item.hash !== song.hash ||
+      item.quality !== quality.value
+    ) {
+      return false
+    }
+
+    prefetched = null
+    const serial = ++requestSerial
+    index.value = targetIndex
+    durationMs.value = song.durationMs ?? 0
+    positionMs.value = 0
+    restorePosition = 0
+    loading.value = true
+    error.value = ''
+    playing.value = false
+    hasSource.value = true
+    audio.pause()
+    audio.src = proxyAudio(item.url)
+    audio.load()
+    ignoreEndedUntil = Date.now() + 1500
+    updateMediaSession(song)
+
+    try {
+      const playback = audio.play()
+      playback
+        .then(() => {
+          if (serial !== requestSerial) return
+          playing.value = !audio.paused
+          loading.value = false
+          restorePosition = 0
+          persist(true)
+          schedulePrefetch()
+        })
+        .catch(() => {
+          if (serial !== requestSerial) return
+          loading.value = false
+          playing.value = false
+          error.value = '浏览器阻止了自动播放，请点击播放继续'
+        })
+    } catch {
+      loading.value = false
+      playing.value = false
+      error.value = '浏览器阻止了自动播放，请点击播放继续'
+    }
+    return true
+  }
+
+  function handleEndedOnce() {
+    if (endedHandled || Date.now() < ignoreEndedUntil) return
+    endedHandled = true
+    window.clearTimeout(endedResetTimer)
+    endedResetTimer = window.setTimeout(() => {
+      endedHandled = false
+    }, 2000)
+    void handleEnded()
   }
 
   function waitForReady(): Promise<void> {
@@ -190,6 +352,7 @@ export const usePlayerStore = defineStore('player', () => {
   async function loadAndPlay(targetIndex: number, startMs = 0) {
     if (targetIndex < 0 || targetIndex >= queue.value.length) return
     const song = queue.value[targetIndex]
+    invalidatePrefetch()
     const serial = ++requestSerial
     index.value = targetIndex
     durationMs.value = song.durationMs ?? 0
@@ -201,21 +364,7 @@ export const usePlayerStore = defineStore('player', () => {
     audio.pause()
 
     try {
-      const order: Quality[] =
-        quality.value === 'flac'
-          ? ['flac', '320', '128']
-          : quality.value === '320'
-            ? ['320', '128']
-            : ['128']
-      let url = ''
-      for (const target of order) {
-        try {
-          url = await resolveSongUrl(song, target)
-        } catch {
-          url = ''
-        }
-        if (url) break
-      }
+      const url = await resolvePlayableUrl(song)
       if (serial !== requestSerial) return
       if (!url) {
         throw new Error('暂无可用播放地址（可能为 VIP / 版权限制）')
@@ -224,6 +373,7 @@ export const usePlayerStore = defineStore('player', () => {
       hasSource.value = true
       audio.src = proxyAudio(url)
       audio.load()
+      ignoreEndedUntil = Date.now() + 1500
       updateMediaSession(song)
       await waitForReady()
       if (serial !== requestSerial) return
@@ -237,6 +387,7 @@ export const usePlayerStore = defineStore('player', () => {
       playing.value = !audio.paused
       restorePosition = 0
       persist(true)
+      schedulePrefetch()
     } catch (err) {
       if (serial !== requestSerial) return
       error.value = (err as Error).message || '播放失败'
@@ -250,23 +401,39 @@ export const usePlayerStore = defineStore('player', () => {
     if (!queue.value.length) return
     if (repeat.value === 'one') {
       audio.currentTime = 0
+      positionMs.value = 0
       try {
         await audio.play()
+        playing.value = true
       } catch {
         playing.value = false
+        error.value = '浏览器阻止了自动播放，请点击播放继续'
       }
       return
     }
-    if (index.value + 1 < queue.value.length) {
-      await loadAndPlay(index.value + 1)
-      return
-    }
-    if (repeat.value === 'all') {
-      await loadAndPlay(0)
-    } else {
+
+    const target = nextQueueIndex()
+    if (target === null) {
       playing.value = false
       positionMs.value = durationMs.value
+      persist(true)
+      return
     }
+    // 单曲队列的列表循环：直接重播当前音频，避免再次请求地址。
+    if (target === index.value) {
+      audio.currentTime = 0
+      positionMs.value = 0
+      try {
+        await audio.play()
+        playing.value = true
+      } catch {
+        playing.value = false
+        error.value = '浏览器阻止了自动播放，请点击播放继续'
+      }
+      return
+    }
+    if (playPrefetched(target)) return
+    await loadAndPlay(target, 0)
   }
 
   async function playQueue(songs: Song[], startIndex = 0) {
@@ -321,11 +488,15 @@ export const usePlayerStore = defineStore('player', () => {
 
   async function next() {
     if (!queue.value.length) return
-    if (index.value + 1 < queue.value.length) {
-      await loadAndPlay(index.value + 1)
-    } else if (repeat.value === 'all') {
-      await loadAndPlay(0)
-    }
+    const target =
+      index.value + 1 < queue.value.length
+        ? index.value + 1
+        : repeat.value === 'all'
+          ? 0
+          : null
+    if (target === null) return
+    if (playPrefetched(target)) return
+    await loadAndPlay(target)
   }
 
   async function previous() {
@@ -361,6 +532,7 @@ export const usePlayerStore = defineStore('player', () => {
     if (value === quality.value) return
     quality.value = value
     persist(true)
+    invalidatePrefetch()
     if (!current.value) return
 
     const resume = positionMs.value
@@ -386,10 +558,14 @@ export const usePlayerStore = defineStore('player', () => {
   function setRepeat(mode: RepeatMode) {
     repeat.value = mode
     persist(true)
+    schedulePrefetch()
   }
 
   function clearQueue() {
     requestSerial++
+    invalidatePrefetch()
+    endedHandled = false
+    window.clearTimeout(endedResetTimer)
     audio.pause()
     hasSource.value = false
     audio.removeAttribute('src')
