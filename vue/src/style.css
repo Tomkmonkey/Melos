@@ -1310,6 +1310,12 @@ input {
   min-width: 0;
 }
 
+/* 封面区在顶栏与控制区之间垂直居中，控制区始终贴近底部。 */
+.player-hero-main {
+  margin: auto 0;
+  min-width: 0;
+}
+
 .player-cover-large {
   width: min(100%, max(140px, calc(100dvh - 330px)));
   margin-inline: auto;
@@ -1360,7 +1366,7 @@ input {
   flex-direction: column;
   gap: var(--space-2);
   width: 100%;
-  margin-top: auto;
+  margin-top: 0;
   padding-top: var(--space-5);
 }
 

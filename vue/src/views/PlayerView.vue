@@ -309,37 +309,39 @@ function playAt(index: number) {
       @touchend.passive="onTouchEnd"
     >
       <section class="player-hero">
-        <CoverImage
-          class="player-cover-large"
-          :src="player.current.cover"
-          :alt="player.current.title"
-          eager
-        />
-        <h1 class="full-player-title">{{ player.current.title }}</h1>
-        <p class="full-player-artist">
-          <template v-for="(artist, artistIndex) in currentArtists" :key="`${artist.id ?? 'name'}-${artist.name}-${artistIndex}`">
-            <span v-if="artistIndex > 0" class="artist-separator"> / </span>
-            <RouterLink
-              v-if="artist.id"
-              class="meta-link"
-              :to="`/artist/${artist.id}`"
-            >
-              {{ artist.name }}
-            </RouterLink>
-            <span v-else>{{ artist.name }}</span>
-          </template>
-          <template v-if="player.current.albumName">
-            ·
-            <RouterLink
-              v-if="player.current.albumId"
-              class="meta-link"
-              :to="`/album/${player.current.albumId}`"
-            >
-              {{ player.current.albumName }}
-            </RouterLink>
-            <span v-else>{{ player.current.albumName }}</span>
-          </template>
-        </p>
+        <div class="player-hero-main">
+          <CoverImage
+            class="player-cover-large"
+            :src="player.current.cover"
+            :alt="player.current.title"
+            eager
+          />
+          <h1 class="full-player-title">{{ player.current.title }}</h1>
+          <p class="full-player-artist">
+            <template v-for="(artist, artistIndex) in currentArtists" :key="`${artist.id ?? 'name'}-${artist.name}-${artistIndex}`">
+              <span v-if="artistIndex > 0" class="artist-separator"> / </span>
+              <RouterLink
+                v-if="artist.id"
+                class="meta-link"
+                :to="`/artist/${artist.id}`"
+              >
+                {{ artist.name }}
+              </RouterLink>
+              <span v-else>{{ artist.name }}</span>
+            </template>
+            <template v-if="player.current.albumName">
+              ·
+              <RouterLink
+                v-if="player.current.albumId"
+                class="meta-link"
+                :to="`/album/${player.current.albumId}`"
+              >
+                {{ player.current.albumName }}
+              </RouterLink>
+              <span v-else>{{ player.current.albumName }}</span>
+            </template>
+          </p>
+        </div>
 
         <div class="player-controls-block">
           <div v-if="player.error" class="error-box">{{ player.error }}</div>
