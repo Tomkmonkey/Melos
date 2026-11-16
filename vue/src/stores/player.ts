@@ -64,9 +64,10 @@ export const usePlayerStore = defineStore('player', () => {
   let requestSerial = 0
   let restorePosition = positionMs.value
   let lastPersisted = 0
-  let prefetched: { index: number; hash: string; quality: Quality; url: string } | null = null
-  let prefetchSerial = 0
-  let prefetchTimer: number | undefined
+  const PREFETCH_AHEAD = 5
+  const prefetchedTracks = new Map<number, { hash: string; quality: Quality; url: string }>()
+  const prefetching = new Set<number>()
+  let prefetchEpoch = 0
   let endedHandled = false
   let endedResetTimer: number | undefined
   let ignoreEndedUntil = 0
@@ -136,6 +137,7 @@ export const usePlayerStore = defineStore('player', () => {
   audio.addEventListener('play', () => {
     playing.value = true
     error.value = ''
+    schedulePrefetch()
   })
   audio.addEventListener('pause', () => {
     playing.value = false
@@ -204,71 +206,89 @@ export const usePlayerStore = defineStore('player', () => {
     return null
   }
 
-  function invalidatePrefetch() {
-    prefetchSerial++
-    prefetched = null
-    if (prefetchTimer !== undefined) {
-      window.clearTimeout(prefetchTimer)
-      prefetchTimer = undefined
+  function clearPrefetch() {
+    prefetchEpoch++
+    prefetchedTracks.clear()
+    prefetching.clear()
+  }
+
+  function upcomingIndices(): number[] {
+    const length = queue.value.length
+    if (!length || repeat.value === 'one') return []
+    const targets: number[] = []
+    const limit = Math.min(PREFETCH_AHEAD, length - 1)
+    for (let offset = 1; offset <= limit; offset++) {
+      let target = index.value + offset
+      if (target >= length) {
+        if (repeat.value !== 'all') break
+        target -= length
+      }
+      if (target === index.value || targets.includes(target)) continue
+      targets.push(target)
     }
+    return targets
+  }
+
+  function prefetchTrack(target: number, epoch: number) {
+    const song = queue.value[target]
+    if (!song?.hash || prefetchedTracks.has(target) || prefetching.has(target)) return
+    const expectedQuality = quality.value
+    prefetching.add(target)
+    void resolvePlayableUrl(song)
+      .then((url) => {
+        if (epoch !== prefetchEpoch || quality.value !== expectedQuality) return
+        if (url) {
+          prefetchedTracks.set(target, {
+            hash: song.hash,
+            quality: expectedQuality,
+            url,
+          })
+        }
+      })
+      .catch(() => {
+        /* 预取失败时仍在切歌时实时解析 */
+      })
+      .finally(() => {
+        if (epoch === prefetchEpoch) prefetching.delete(target)
+      })
   }
 
   /**
-   * 提前解析下一首播放地址。iOS PWA 在歌曲结束后再发网络请求容易被暂停，
-   * 提前拿到 URL 后可以在 ended 事件里直接调用 play()。
+   * 预取接下来几首的播放地址。iOS PWA 在锁屏或切歌后可能暂停 JS 和网络，
+   * 仅预取一首会在第三首时没有可用地址，因此保留一个小窗口。
    */
   function schedulePrefetch() {
-    const target = nextQueueIndex()
-    if (target === null || target === index.value) {
-      invalidatePrefetch()
+    if (!queue.value.length) {
+      clearPrefetch()
       return
     }
-    const song = queue.value[target]
-    if (!song?.hash) {
-      invalidatePrefetch()
+    const targets = upcomingIndices()
+    if (!targets.length) {
+      clearPrefetch()
       return
     }
-    if (
-      prefetched &&
-      prefetched.index === target &&
-      prefetched.hash === song.hash &&
-      prefetched.quality === quality.value
-    ) {
-      return
+    const wanted = new Set(targets)
+    for (const key of prefetchedTracks.keys()) {
+      if (!wanted.has(key)) prefetchedTracks.delete(key)
     }
-
-    invalidatePrefetch()
-    const serial = prefetchSerial
-    const expectedQuality = quality.value
-    prefetchTimer = window.setTimeout(async () => {
-      prefetchTimer = undefined
-      try {
-        const url = await resolvePlayableUrl(song)
-        if (serial !== prefetchSerial || quality.value !== expectedQuality) return
-        if (url) {
-          prefetched = { index: target, hash: song.hash, quality: expectedQuality, url }
-        }
-      } catch {
-        /* 预取失败时仍在切歌时实时解析 */
-      }
-    }, 600)
+    const epoch = prefetchEpoch
+    for (const target of targets) prefetchTrack(target, epoch)
   }
 
   /** 在 ended 事件中同步启动下一首，避免异步等待导致 iOS 阻止自动播放。 */
   function playPrefetched(targetIndex: number): boolean {
-    const item = prefetched
+    const item = prefetchedTracks.get(targetIndex)
     const song = queue.value[targetIndex]
     if (
       !item ||
       !song ||
-      item.index !== targetIndex ||
       item.hash !== song.hash ||
       item.quality !== quality.value
     ) {
       return false
     }
 
-    prefetched = null
+    prefetchedTracks.delete(targetIndex)
     const serial = ++requestSerial
     index.value = targetIndex
     durationMs.value = song.durationMs ?? 0
@@ -283,6 +303,8 @@ export const usePlayerStore = defineStore('player', () => {
     audio.load()
     ignoreEndedUntil = Date.now() + 1500
     updateMediaSession(song)
+    // 尽早为后续歌曲预取，锁屏后仍能继续连播。
+    schedulePrefetch()
 
     try {
       const playback = audio.play()
@@ -352,7 +374,6 @@ export const usePlayerStore = defineStore('player', () => {
   async function loadAndPlay(targetIndex: number, startMs = 0) {
     if (targetIndex < 0 || targetIndex >= queue.value.length) return
     const song = queue.value[targetIndex]
-    invalidatePrefetch()
     const serial = ++requestSerial
     index.value = targetIndex
     durationMs.value = song.durationMs ?? 0
@@ -375,6 +396,7 @@ export const usePlayerStore = defineStore('player', () => {
       audio.load()
       ignoreEndedUntil = Date.now() + 1500
       updateMediaSession(song)
+      schedulePrefetch()
       await waitForReady()
       if (serial !== requestSerial) return
 
@@ -387,7 +409,6 @@ export const usePlayerStore = defineStore('player', () => {
       playing.value = !audio.paused
       restorePosition = 0
       persist(true)
-      schedulePrefetch()
     } catch (err) {
       if (serial !== requestSerial) return
       error.value = (err as Error).message || '播放失败'
@@ -443,6 +464,7 @@ export const usePlayerStore = defineStore('player', () => {
       return
     }
     const safeIndex = Math.min(Math.max(0, startIndex), playable.length - 1)
+    clearPrefetch()
     queue.value = playable
     index.value = safeIndex
     positionMs.value = 0
@@ -532,7 +554,7 @@ export const usePlayerStore = defineStore('player', () => {
     if (value === quality.value) return
     quality.value = value
     persist(true)
-    invalidatePrefetch()
+    clearPrefetch()
     if (!current.value) return
 
     const resume = positionMs.value
@@ -553,6 +575,7 @@ export const usePlayerStore = defineStore('player', () => {
   function cycleRepeat() {
     repeat.value = repeat.value === 'all' ? 'one' : repeat.value === 'one' ? 'off' : 'all'
     persist(true)
+    schedulePrefetch()
   }
 
   function setRepeat(mode: RepeatMode) {
@@ -563,7 +586,7 @@ export const usePlayerStore = defineStore('player', () => {
 
   function clearQueue() {
     requestSerial++
-    invalidatePrefetch()
+    clearPrefetch()
     endedHandled = false
     window.clearTimeout(endedResetTimer)
     audio.pause()

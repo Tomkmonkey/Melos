@@ -126,7 +126,7 @@ MELOS_WEB_PORT=8080 docker compose -f docker-compose.web.yml up -d --build
 - 发现页右上角头像 + 在线绿点，点击直达「我的音乐」
 - 发现 / 搜索 / 歌单页自动缓存，进入播放页再返回不重新加载
 - PWA 安装、离线壳、独立窗口运行
-- iPhone / iPad PWA 自动连播：提前预取下一首，歌曲结束后直接切换
+- iPhone / iPad PWA 自动连播：提前预取后续 5 首，歌曲结束后直接切换
 
 ### ⚙️ 设置
 
@@ -343,7 +343,7 @@ docker compose -f docker-compose.web.yml up -d --build
 
 - 新增设置页：音质、音量、循环模式、歌词显示、搜索、动画、账号与数据管理
 - 设置页支持每日领取酷狗概念 VIP
-- iPhone / iPad PWA 自动连播优化：预取下一首并避免 iOS 阻止自动播放
+- iPhone / iPad PWA 自动连播优化：预取后续 5 首并避免 iOS 阻止自动播放
 - 歌词缓存、合唱多歌手跳转、设置页账号前置、VIP 到期时间按本地时区展示
 - 播放页音质选择（128K / 320K / FLAC）
 - 评论图片内置查看器
