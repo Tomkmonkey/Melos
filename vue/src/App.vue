@@ -6,10 +6,12 @@ import BottomNav from './components/BottomNav.vue'
 import PlayerBar from './components/PlayerBar.vue'
 import { usePlayerStore } from './stores/player'
 import { useSettingsStore } from './stores/settings'
+import { useToastStore } from './stores/toast'
 
 const route = useRoute()
 const player = usePlayerStore()
 const settings = useSettingsStore()
+const toast = useToastStore()
 
 const immersive = computed(() => route.meta.immersive === true)
 const showPlayer = computed(() => !immersive.value && !!player.current)
@@ -30,5 +32,8 @@ const cachedViews = ['HomeView', 'SearchView', 'LibraryView', 'PlaylistView']
     </main>
     <PlayerBar v-if="showPlayer" />
     <BottomNav v-if="!immersive" />
+    <Transition name="toast">
+      <div v-if="toast.message" class="toast" role="status">{{ toast.message }}</div>
+    </Transition>
   </div>
 </template>

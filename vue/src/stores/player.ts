@@ -551,6 +551,43 @@ export const usePlayerStore = defineStore('player', () => {
     await playQueue([song], 0)
   }
 
+  /** 把歌曲插到当前歌曲之后（下一首播放）；队列为空时直接播放。 */
+  function playNext(song: Song): boolean {
+    if (!song.hash) return false
+    const currentSong = current.value
+    if (!currentSong) {
+      void playSong(song)
+      return true
+    }
+    if (currentSong.hash === song.hash) return false
+
+    const items = queue.value.filter((item) => item.hash !== song.hash)
+    const currentPos = items.indexOf(currentSong)
+    if (currentPos < 0) return false
+    items.splice(currentPos + 1, 0, song)
+
+    clearPrefetch()
+    queue.value = items
+    index.value = currentPos
+    persist(true)
+    schedulePrefetch()
+    return true
+  }
+
+  /** 把歌曲追加到播放队列末尾；队列为空时直接播放。 */
+  function enqueue(song: Song): boolean {
+    if (!song.hash) return false
+    if (!current.value) {
+      void playSong(song)
+      return true
+    }
+    if (queue.value.some((item) => item.hash === song.hash)) return false
+    queue.value = [...queue.value, song]
+    persist(true)
+    schedulePrefetch()
+    return true
+  }
+
   async function toggle() {
     if (!current.value) return
     if (!hasSource.value || !audio.src) {
@@ -690,6 +727,8 @@ export const usePlayerStore = defineStore('player', () => {
     hasSource,
     playQueue,
     playSong,
+    playNext,
+    enqueue,
     toggle,
     next,
     previous,
