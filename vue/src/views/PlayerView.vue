@@ -183,7 +183,13 @@ const volumeProgress = computed(() => Math.round(player.volume * 100))
 const currentArtists = computed(() => {
   const song = player.current
   if (!song?.artist) return []
-  if (song.artists?.length) return song.artists
+  if (song.artists?.length) {
+    // 旧队列或部分接口只给到歌手名，若只有一位歌手则补上歌曲自带的 artistId。
+    if (song.artists.length === 1 && !song.artists[0].id && song.artistId) {
+      return [{ ...song.artists[0], id: song.artistId }]
+    }
+    return song.artists
+  }
   if (song.artistId && !/\s[/、&]\s|、/.test(song.artist)) {
     return [{ id: song.artistId, name: song.artist }]
   }

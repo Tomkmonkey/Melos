@@ -113,7 +113,9 @@ function artistRefs(raw: Any): ArtistRef[] {
     refs.push(id ? { id, name } : { name })
   }
 
-  for (const key of ['singers', 'Singers', 'authors']) {
+  // 歌单 / 推荐卡片 / 「我喜欢」的歌曲用 singerinfo 返回歌手，搜索用
+  // Singers，专辑用 authors，这里需要全部覆盖，否则播放页拿不到歌手 id。
+  for (const key of ['singers', 'Singers', 'authors', 'singerinfo']) {
     const value = raw[key]
     if (Array.isArray(value)) {
       for (const item of value) {
@@ -227,6 +229,7 @@ export function parseSong(raw: Any): Song {
     str(raw.singerid ?? raw.singer_id) ??
     firstArrayId(raw.Singers ?? raw.singers) ??
     firstArrayId(raw.authors) ??
+    firstArrayId(raw.singerinfo) ??
     firstArrayId(raw.SingerId)
 
   return {
