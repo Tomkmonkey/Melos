@@ -1,66 +1,97 @@
 <p align="center">
-  <img src="vue/public/icons/Icon-192.png" alt="Melos Logo" width="120" height="120" />
+  <img src="vue/public/icons/Icon-192.png" alt="Melos" width="88" height="88">
 </p>
 
 <h1 align="center">Melos</h1>
 
 <p align="center">
-  <strong>自托管音乐 Web PWA · 一条 Docker 命令启动</strong>
-  <br />
-  Vue 3 前端 · 内嵌 KuGouMusicApi · 扫码登录 · 自适应桌面 / 手机
+  让 iOS 用户也能免费、便捷地享受音乐。
 </p>
 
 <p align="center">
-  <img src="https://img.shields.io/badge/Vue_3-171717?style=flat-square" alt="Vue 3" />
-  <img src="https://img.shields.io/badge/Vite_8-404040?style=flat-square" alt="Vite" />
-  <img src="https://img.shields.io/badge/TypeScript_6-737373?style=flat-square" alt="TypeScript" />
-  <img src="https://img.shields.io/badge/Docker_Compose-171717?style=flat-square" alt="Docker Compose" />
-  <img src="https://img.shields.io/badge/Web_PWA-404040?style=flat-square" alt="Web PWA" />
-  <img src="https://img.shields.io/badge/Port_34962-737373?style=flat-square" alt="Port 34962" />
-</p>
-
-<p align="center">
-  <img src="https://img.shields.io/badge/Platform-Web_PWA-171717?style=flat-square" alt="Web PWA" />
-  <img src="https://img.shields.io/badge/Platform-iPhone_%2F_iPad-404040?style=flat-square" alt="iPhone / iPad" />
-  <img src="https://img.shields.io/badge/Platform-Android-404040?style=flat-square" alt="Android" />
+  自托管音乐 PWA · Vue 3 · Docker Compose
 </p>
 
 ---
 
-## 📖 Melos 是什么
+## 设计初衷
 
-**Melos 是一个自托管的音乐 Web PWA。** 它把 Vue 3 前端、酷狗 API
-（KuGouMusicApi）和会话适配网关打包成一套 Docker Compose 服务。
+在 iOS 上使用第三方音乐客户端并不轻松：应用需要上架 App Store，或依赖签名、侧载等有门槛的方式。Melos 把播放器做成 Web PWA，部署在自己的服务器上，用 Safari 打开后「添加到主屏幕」，即可获得接近原生应用的体验。
 
-部署后打开浏览器即可使用：用 **酷狗音乐概念版 App** 扫码登录一次，就能搜索、
-播放、管理歌单、看歌词和评论；在 iPhone / Android 上「添加到主屏幕」后，
-它就像一个原生音乐 App 一样运行。
+Melos 本身免费、自托管，不经过应用商店，也不需要单独安装客户端。音乐数据来自第三方接口，具体歌曲能否播放取决于版权与账号权益。
 
-> 仓库只维护 Vue Web PWA。此前的 Flutter、Linux 桌面与 VNC 版本已移除。
+当前仓库只维护 Vue Web PWA；早期 Flutter、Linux 桌面与 VNC 版本已移除。
 
-### 为什么是 Melos
+## 核心功能
 
-- **一条命令部署**：`docker compose -f docker-compose.web.yml up -d --build`。
-- **浏览器原生播放**：HTML5 Audio + 同源音频代理，不需要 VNC 或网页桌面。
-- **无需前端编译环境**：Vue 产物已预编译到 `prebuilt/vue`，服务器只需要 Docker。
-- **纯白极简 UI**：白色背景、浅灰分隔、细边框、黑白按钮，无渐变、
-  无玻璃拟态、无装饰光效。
-- **登录态持久化**：会话保存在 `melos-web-data` 数据卷，重启 / 升级无需重新扫码。
-- **同源代理**：音频、评论、头像都经由 `/api` 转发，避开 HTTPS 混合内容与 CORS。
-- **移动端友好**：输入框字号 16px 避免 iOS 聚焦放大；动效克制，
-  听歌时页面可以进入空闲状态。
+**播放**
 
-> 本项目通过第三方 API 获取音乐数据，仅供学习交流。歌曲版权归原平台与版权方所有；
-> VIP / 版权受限歌曲可能没有可用播放地址。
+- 128K / 320K / FLAC 三档音质，所选音质不可用时自动降级
+- 播放队列、进度拖动、音量与循环模式；队列和进度自动持久化
+- 歌曲行「更多」菜单支持下一首播放、添加到播放队列
+- Media Session 支持锁屏与系统媒体控制
+- 收藏 / 取消收藏，同步到酷狗「我喜欢」
 
----
+**歌词**
 
-## 🚀 快速开始
+- KRC / LRC 行级同步，支持翻译与音译
+- 桌面端固定双栏：封面在左，歌词在右
+- 移动端左右滑动切换播放页与歌词页，也可使用右上角歌词按钮
+- 歌词在会话内缓存，再次进入不重复加载
+
+**发现与资料库**
+
+- 首页推荐卡片与推荐歌单
+- 搜索单曲与歌单，支持实时搜索建议和热搜词
+- 歌手页、专辑页、我的歌单与歌单详情
+- 播放页的歌手与专辑可点击跳转；合唱歌曲的每位歌手都有独立链接
+
+**评论**
+
+- 查看热门 / 最新评论、楼层回复与评论配图
+- 内置图片查看器，可放大、缩小和切换
+
+**移动端与 PWA**
+
+- 可添加到主屏幕，以独立窗口运行，并提供离线壳
+- iPhone / iPad 自动连播：预取后续 10 首并预加载下一首音频
+- 桌面侧边栏与手机底部导航两套布局
+
+**设置**
+
+- 默认音质、音量、循环模式
+- 歌词翻译 / 音译、自动滚动、字号
+- 搜索建议、减少动画
+- 每日 VIP 奖励领取、账号与队列管理
+
+## 界面预览
+
+<p align="center">
+  <img src="screenshots/vue-lyrics.png" alt="桌面播放与歌词" width="100%">
+</p>
+
+<p align="center"><sub>桌面播放与歌词</sub></p>
+
+<p align="center">
+  <img src="screenshots/vue-player-mobile.png" alt="手机播放页" width="260">
+  <img src="screenshots/vue-lyrics-mobile.png" alt="手机歌词页" width="260">
+</p>
+
+<p align="center"><sub>手机播放页 / 歌词页</sub></p>
+
+<p align="center">
+  <img src="screenshots/vue-artist.png" alt="歌手页" width="260">
+  <img src="screenshots/vue-album.png" alt="专辑页" width="260">
+</p>
+
+<p align="center"><sub>歌手页 / 专辑页</sub></p>
+
+## 部署与使用
 
 ### 环境要求
 
-- Docker 24+ 与 Docker Compose v2
-- 一台可以运行容器的 Linux / macOS / Windows 主机
+- Docker Engine 与 Docker Compose v2
+- 一台可以运行容器的 Linux、macOS 或 Windows 主机
 
 ### 启动
 
@@ -70,15 +101,13 @@ cd Melos
 docker compose -f docker-compose.web.yml up -d --build
 ```
 
-默认使用宿主机端口 **34962**，启动后打开：
+默认映射到宿主机端口 `34962`：
 
-```
+```text
 http://<主机IP>:34962
 ```
 
-1. 点击「扫码登录」。
-2. 使用 **酷狗音乐概念版 App** 扫码并确认。
-3. 登录态写入 `melos-web-data` 数据卷，重启容器后仍然有效。
+首次打开后点击「扫码登录」，使用酷狗音乐概念版 App 扫码并确认。登录态保存在 `melos-web-data` 数据卷，重启或升级容器后仍然有效。
 
 如需更换端口：
 
@@ -86,146 +115,92 @@ http://<主机IP>:34962
 MELOS_WEB_PORT=8080 docker compose -f docker-compose.web.yml up -d --build
 ```
 
----
+### 添加到主屏幕
 
-## ✨ 功能
+在 iPhone / iPad 上使用 Safari 打开部署地址，点击「分享」中的「添加到主屏幕」。Android 可在浏览器菜单中选择「安装应用」或「添加到主屏幕」。
 
-### 🎵 播放
+PWA 安装与 Service Worker 需要 HTTPS（`localhost` 除外）。公网部署请配置反向代理与 TLS 证书。
 
-- HTML5 Audio + Media Session（锁屏 / 系统媒体控制）
-- **音质选择：128K / 320K / FLAC**（可在设置页选择），切换时保持当前播放位置
-- 320K / 128K 自动降级重试
-- 播放队列、上一首 / 下一首、进度拖动、音量、循环模式
-- 歌曲行「更多」菜单支持**下一首播放**与**添加到播放队列**
-- **收藏 / 取消收藏**：同步到酷狗「我喜欢」，播放控件按「收藏 — 播放控件 — 循环模式」排布
-- 队列与进度持久化，刷新或重开 PWA 后自动恢复
+## 更新
 
-### 🎤 歌词
-
-- KRC / LRC 行级同步，翻译与音译；LRC 同行翻译合并兜底
-- 歌词会话缓存：同一首歌再次进入播放页不重复加载
-- 桌面端：封面在左，歌词固定在右侧
-- 移动端：向左滑进入歌词，向右滑返回封面；也可点右上角的歌词图标
-
-### 💬 评论
-
-- 热门 / 最新评论、楼层回复、评论配图
-- 内置图片查看器：点击评论图片即可放大、缩小、左右切换
-- 评论、头像与图片经由同源代理加载，HTTPS 下可用
-
-### 🔍 搜索与发现
-
-- 首页 6 组推荐歌曲 + 推荐歌单
-- 搜索单曲与歌单，播放全部
-- 实时搜索建议与真实热搜词
-- **歌手页 / 专辑页**：播放页的歌手、专辑名称可点击跳转；合唱歌曲的每位歌手均可单独点击
-- 我的歌单、歌单详情
-
-### 📱 PWA 与自适应
-
-- **桌面**：左侧导航 + 内容区 + 底部播放条
-- **手机**：底部导航 + 迷你播放条 + 全屏播放页
-- 发现页右上角头像 + 在线绿点，点击直达「我的音乐」
-- 发现 / 搜索 / 歌单页自动缓存，进入播放页再返回不重新加载
-- PWA 安装、离线壳、独立窗口运行
-- iPhone / iPad PWA 自动连播：提前预取后续 10 首并预加载下一首音频，歌曲结束后直接切换
-
-### ⚙️ 设置
-
-- 账号：登录状态与退出登录（置顶）
-- 每日 VIP：听歌奖励 + 广告奖励自动领取，显示今日进度与精确到期时间
-  （领取逻辑参考 [develop202/kgcheckin](https://github.com/develop202/kgcheckin)）
-- 播放：默认音质、音量、循环模式
-- 歌词：翻译 / 音译开关、自动滚动、字号
-- 搜索：搜索建议开关、清除最近搜索
-- 外观与性能：减少动画
-- 数据：清空播放队列、恢复默认设置
-
----
-
-## 📸 界面预览
-
-| 桌面首页 | 手机首页 |
-|:--------:|:--------:|
-| ![桌面首页](screenshots/vue-home.png) | ![手机首页](screenshots/vue-mobile.png) |
-
-| 搜索建议（桌面） | 歌单搜索（桌面） |
-|:--------:|:--------:|
-| ![搜索建议](screenshots/vue-search.png) | ![歌单搜索](screenshots/vue-playlist-search.png) |
-
-| 歌词页（桌面） | 手机歌词页 |
-|:------:|:--------:|
-| ![歌词页](screenshots/vue-lyrics.png) | ![手机歌词](screenshots/vue-lyrics-mobile.png) |
-
-| 手机播放页 |
-|:----------:|
-| ![手机播放](screenshots/vue-player-mobile.png) |
-
-| 设置（桌面） | 设置（手机） |
-|:----------:|:--------:|
-| ![设置桌面](screenshots/vue-settings.png) | ![设置手机](screenshots/vue-settings-mobile.png) |
-
-| 歌手页 | 专辑页 |
-|:------:|:------:|
-| ![歌手页](screenshots/vue-artist.png) | ![专辑页](screenshots/vue-album.png) |
-
-| 评论面板 | 图片查看器 |
-|:------:|:------:|
-| ![评论](screenshots/vue-comments.png) | ![图片查看器](screenshots/vue-image-viewer.png) |
-
----
-
-## 🏗️ 架构与实现
-
+```bash
+cd Melos
+git pull
+docker compose -f docker-compose.web.yml up -d --build
 ```
+
+`dev` 是当前维护分支，前端源码与预编译产物都在其中。更新时必须带 `--build`，因为 API 与 Web 镜像都可能变化；数据卷不会被删除，升级后无需重新扫码。
+
+## 架构
+
+```text
 浏览器 / PWA
-      │  http(s)://<host>:34962
-      ▼
-┌───────────────────────────────────────────────┐
-│ Docker 项目 melos-web                         │
-│                                               │
-│  melos-web (Nginx)                           │
-│    ├── /            → prebuilt/vue 静态文件   │
-│    └── /api/        → melos-api:3005          │
-│                                               │
-│  melos-api (Node 18)                          │
-│    ├── 会话网关 server.js                      │
-│    │     ├── /audio-proxy    音频 Range 转发   │
-│    │     ├── /comment-proxy  评论转发          │
-│    │     └── 登录 / 会话协议适配               │
-│    └── KuGouMusicApi :3006 (platform=lite)    │
-└───────────────────────────────────────────────┘
-```
+     │  HTTP(S) :34962
+     ▼
+melos-web（Nginx）
+     ├── /        → prebuilt/vue
+     └── /api/    → melos-api:3005
 
-### 组成
+melos-api（Node.js 18）
+     ├── 会话网关 :3005
+     │    ├── 登录 / 会话适配
+     │    ├── 音频 Range 代理
+     │    └── 评论代理
+     └── KuGouMusicApi :3006（platform=lite）
+```
 
 | 组件 | 说明 |
 |---|---|
-| `melos-web` | Nginx + 预编译 Vue 3 SPA，默认端口 80（宿主机 34962） |
-| `melos-api` | Node 18，内置会话网关与 KuGouMusicApi |
-| `melos-web-data` | 登录会话、网关数据持久化卷 |
-| `prebuilt/vue` | 已构建的 Vue 前端产物，部署时不需要 Node SDK |
+| `melos-web` | Nginx 与预编译 Vue SPA，默认映射到宿主机端口 `34962` |
+| `melos-api` | Node.js 18，包含会话网关与内嵌 KuGouMusicApi |
+| `melos-web-data` | 登录会话与网关数据的持久化卷 |
 
-### 关键设计
+关键设计：
 
-- **会话网关**：客户端只认 `X-Kg-Session-Id` / `t1` 头，网关转换成酷狗 Cookie；
-  扫码登录、刷新、退出都由网关适配。
-- **同源代理**：音频与评论接口多为 HTTP 且不带 CORS 头；
-  `/api/audio-proxy` 与 `/api/comment-proxy` 在服务端转发，并严格限制目标域名。
-- **Range 透传**：音频代理完整转发 `Range` / `206`，支持拖动进度。
-- **预编译产物**：Vue 前端在开发机编译，部署机只负责打包镜像。
-- **音质降级**：所选音质不可用时自动尝试低一级音质，避免播放中断。
+- **会话网关**：客户端只携带 `X-Kg-Session-Id` / `t1` 会话头，由网关映射为酷狗 Cookie；扫码登录、刷新与退出均由网关适配。
+- **同源代理**：音频与评论接口多为 HTTP 且不带 CORS 头，统一经 `/api` 转发，并限制目标域名。
+- **Range 透传**：音频代理完整转发 `Range` 与 `206` 响应，支持拖动进度。
+- **预编译产物**：Vue 前端在构建阶段生成 `prebuilt/vue`，部署机只需要 Docker。
 
----
+## 技术栈
 
-## 🛠️ 开发与构建
+| 层级 | 技术 |
+|---|---|
+| 前端 | Vue 3.5、TypeScript 6、Vite 8、Pinia、Vue Router |
+| PWA | vite-plugin-pwa、Workbox |
+| 界面 | 原生 CSS、lucide-vue-next |
+| 音频 | HTML5 Audio、Media Session API |
+| 后端 | Node.js 18、Express、自研会话网关 |
+| 部署 | Nginx、Docker Compose |
 
-### 环境
+## 项目结构
 
-- Node.js 20+ / npm
-- 可选：Docker 24+ / Compose v2
+```text
+.
+├── docker-compose.web.yml
+├── Dockerfile.web.vue
+├── Dockerfile.api
+├── docker/
+│   ├── gateway/server.js
+│   ├── nginx-web.conf
+│   ├── api/start.sh
+│   └── build-vue.sh
+├── prebuilt/vue/
+├── screenshots/
+├── third_party/KuGouMusicApi/
+├── vue/
+│   ├── src/
+│   │   ├── api/
+│   │   ├── components/
+│   │   ├── stores/
+│   │   └── views/
+│   └── public/
+└── api.json
+```
 
-### 前端开发
+## 开发
+
+前端构建需要 Node.js 20.19+ 或 22.12+。
 
 ```bash
 cd vue
@@ -234,142 +209,75 @@ npm run dev      # Vite 开发服务器，/api 代理到 127.0.0.1:3005
 npm run build    # 产物输出到 ../prebuilt/vue
 ```
 
-需要本地 API 时，可先启动 Docker 服务：
+本地调试 API 时，可先启动 Docker 服务：
 
 ```bash
 docker compose -f docker-compose.web.yml up -d --build
 ```
 
-### 重新生成预编译产物
+修改 `vue/` 代码后必须重新生成 `prebuilt/vue`，否则 Web 镜像不会更新：
 
 ```bash
 ./docker/build-vue.sh
-# 等价于
-cd vue && npm ci && npm run build
 ```
 
-修改 `vue/` 代码后必须重新生成 `prebuilt/vue`，否则 Web 镜像不会更新。
+## 环境变量
 
-### 环境变量
-
-| 变量 | 说明 | 默认值 |
+| 变量 | 默认值 | 说明 |
 |---|---|---|
-| `MELOS_WEB_PORT` | Web PWA 宿主机端口 | `34962` |
-| `TZ` | 容器时区 | `Asia/Shanghai` |
-| `KUGOU_API_PROXY` | KuGouMusicApi 的 HTTP 代理 | *(空)* |
+| `MELOS_WEB_PORT` | `34962` | Web PWA 的宿主机端口 |
+| `TZ` | `Asia/Shanghai` | 容器时区 |
+| `KUGOU_API_PROXY` | 空 | KuGouMusicApi 使用的 HTTP 代理 |
 
-前端固定使用同源 `/api`，由 Nginx 转发到会话网关，无需配置 API 地址。
+前端固定使用同源 `/api`，由 Nginx 转发到会话网关，无需额外配置 API 地址。
 
----
+## 语言与国际化
 
-## 📁 项目结构
+- 当前界面仅提供简体中文，仓库尚未接入 i18n 框架或语言资源目录。
+- README 只有中文版本，没有其他语言的 README 文件。
+- 歌词的翻译与音译来自上游歌词数据，可在设置中开关；它属于内容能力，不是界面国际化。
 
-```
-docker-compose.web.yml       # Web PWA 一键启动
-Dockerfile.web.vue           # Web 镜像：Nginx + prebuilt/vue
-Dockerfile.api               # API 镜像：KuGouMusicApi + 会话网关
-docker/
-├── nginx-web.conf           # 静态资源 + /api 同源反代
-├── gateway/server.js        # 会话网关、音频/评论代理
-├── api/start.sh             # API 容器启动脚本
-└── build-vue.sh             # 重新生成 prebuilt/vue
-prebuilt/vue/                # 预编译 Vue Web 产物
-third_party/
-└── KuGouMusicApi/           # 内嵌酷狗 API
-vue/                         # Vue 3 + Vite + TypeScript 前端
-├── src/
-│   ├── api/                 # HTTP 客户端、解析、歌词、评论、歌手/专辑
-│   ├── stores/              # 登录、播放器状态
-│   ├── components/          # 播放条、评论面板、图片查看器等
-│   └── views/               # 首页、搜索、歌手、专辑、歌单、播放页、设置
-├── public/                  # PWA 图标
-└── vite.config.ts           # PWA / 构建 / 开发代理
-api.json                     # KuGouMusicApi OpenAPI 文档
-```
+## 常见问题
 
----
+**为什么部分歌曲无法播放？**
 
-## ❓ 常见问题
+VIP、版权受限或没有无损源的歌曲可能无法返回播放地址。播放器会按所选音质逐级降级到 320K / 128K；若仍无可用地址，会提示播放失败。
 
-**评论区一直加载不出来？**
-更新到最新版本，并确认 **api 镜像也重新构建**：
+**PWA 无法安装或离线壳不生效？**
 
-```bash
-git pull
-docker compose -f docker-compose.web.yml up -d --build
-```
-
-旧镜像没有 `/api/comment-proxy`，只重启容器不会生效。
-
-**PWA 无法安装 / 离线壳不工作？**
-需要 HTTPS（`localhost` 除外）。公网部署请配置反向代理与证书。
-
-**端口被占用？**
-使用 `MELOS_WEB_PORT=8080 docker compose -f docker-compose.web.yml up -d --build`。
+PWA 与 Service Worker 需要 HTTPS（`localhost` 除外）。公网部署请为域名配置 TLS。
 
 **升级后浏览器仍是旧界面？**
-彻底关闭 PWA 后重新打开，或在浏览器中强制刷新（Ctrl+Shift+R）。
 
-**选择了 FLAC 但感觉没有变化？**
-部分歌曲没有无损源，播放器会自动降级到 320K / 128K，避免播放失败。
+彻底关闭 PWA 后重新打开，或在浏览器中强制刷新（Ctrl+Shift+R）。升级时请带上 `--build`，确保 `melos-web` 与 `melos-api` 都重新构建。
 
-**歌曲无法播放？**
-VIP / 版权受限歌曲可能不返回播放地址；也可能是网络或音质降级后仍无可用源。
+**登录态会丢失吗？**
 
-**灵动岛 / 锁屏能快捷收藏吗？**
-不能。Web Media Session API 没有收藏 / 喜欢动作，PWA 只能在播放页内收藏；
-锁屏和灵动岛可以控制播放、上一首 / 下一首。只有原生 App 才能通过系统媒体命令添加收藏键。
+不会。会话保存在 `melos-web-data` 数据卷；只有执行 `docker compose -f docker-compose.web.yml down -v` 才会清空。
 
-**登录态会丢吗？**
-不会。会话保存在 `melos-web-data` 数据卷；只有执行 `down -v` 才会清空。
+**端口被占用怎么办？**
 
----
+使用 `MELOS_WEB_PORT=8080 docker compose -f docker-compose.web.yml up -d --build` 更换端口。
 
-## 🔄 更新方式
+**锁屏或灵动岛可以收藏歌曲吗？**
 
-```bash
-cd Melos
-git pull
-docker compose -f docker-compose.web.yml up -d --build
-```
+不能。Web Media Session API 没有收藏动作，PWA 只能在播放页内收藏；锁屏与媒体控制支持播放、暂停、上一首和下一首。
 
-- `dev` 是默认分支，Vue 源码与预编译产物都在这里。
-- 必须带 `--build`：API 与前端都可能更新。
-- 数据卷不会删除，升级后无需重新扫码。
+## 更新日志
 
----
+版本与变更记录见 [vue/CHANGELOG.md](vue/CHANGELOG.md)。
 
-## 📝 更新日志
+相关文档：
 
-- 更新记录：[vue/CHANGELOG.md](vue/CHANGELOG.md)
-- 部署说明：[docker/README.md](docker/README.md)
-- 前端说明：[vue/README.md](vue/README.md)
+- [部署说明](docker/README.md)
+- [前端说明](vue/README.md)
 
-### 近期更新
+## 声明与许可
 
-- 歌曲行新增「更多」菜单：下一首播放、添加到播放队列
-- 歌词手势改为左滑进入、右滑返回，符合横向翻页习惯
-- 歌曲列表懒加载：首屏只渲染前 40 首，歌单超过 200 首时滚动按需加载下一页
-- 播放页移除音质选择，封面居中、控制区贴底，音量滑杆并入进度行
-- 播放页收藏：一键收藏 / 取消收藏到「我喜欢」，控制区改为「收藏 — 播放控件 — 循环模式」
-- 新增设置页：音质、音量、循环模式、歌词显示、搜索、动画、账号与数据管理
-- 设置页支持每日领取酷狗概念 VIP
-- iPhone / iPad PWA 自动连播优化：预取后续 10 首、预加载下一首音频并避免 iOS 阻止自动播放
-- 歌词缓存、合唱多歌手跳转、设置页账号前置、VIP 到期时间按本地时区展示
-- 播放页音质选择（128K / 320K / FLAC）
-- 评论图片内置查看器
-- 搜索页新增歌单搜索
-- 新增歌手页与专辑页，播放页歌手 / 专辑可点击跳转
-- 移除 Flutter / Linux 桌面 / VNC 版本，只保留 Vue Web PWA
-- 纯白极简 UI、响应式布局、PWA 安装与离线壳
-- KRC / LRC 行级歌词、翻译与音译
-- 搜索建议、真实热搜词、发现页头像与在线状态
+| 范围 | 说明 |
+|---|---|
+| Melos 仓库代码 | 仓库暂未附带根目录 `LICENSE` 文件；再分发或商用前请先取得维护者授权并补充许可证。 |
+| KuGouMusicApi | 使用 MIT License，版权归原作者所有；完整声明见 [third_party/KuGouMusicApi/LICENSE](third_party/KuGouMusicApi/LICENSE)。 |
+| 音乐内容 | 音乐、封面、歌词、评论等内容的版权归原平台与权利人所有。本项目不存储音乐文件，不提供下载，仅供学习交流。 |
 
----
-
-## 📄 声明
-
-- Melos 基于 [KA Music](https://github.com/umr-xiaomai/kgka_Music_hl) 的功能重构，
-  音乐数据来自第三方接口，仅供学习交流。
-- 酷狗、KuGou 及相关标识归腾讯音乐娱乐集团及权利方所有。
-- 本项目不提供音乐下载，不存储音乐文件；请支持正版音乐。
+Melos 基于 [KA Music](https://github.com/umr-xiaomai/kgka_Music_hl) 的功能重构，保留原项目署名。Melos 是非官方项目，与酷狗音乐、腾讯音乐娱乐集团无隶属或合作关系。酷狗、KuGou 及相关标识归腾讯音乐娱乐集团及权利方所有。请支持正版音乐。
